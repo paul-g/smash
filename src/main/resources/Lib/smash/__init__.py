@@ -106,7 +106,7 @@ class Ball(object):
 
 
     def Draw(self, batch):
-        batch.draw(self.texture, self.ball.x, self.ball.y)
+        batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
 
 
     def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
@@ -118,10 +118,10 @@ class Ball(object):
         newY = newPosition.y
         radius = self.ball.radius
 
-        if newX < radius or newX > WIDTH - 2 * radius:
+        if newX < radius or newX > WIDTH - radius:
             # left or right wall collision
             self.direction.x *= -1
-        elif newY + radius > HEIGHT - 2 * radius or newY < radius:
+        elif newY > HEIGHT - radius or newY < radius:
             self.direction.y *= -1
 
         newPosition = self.position.add(self.direction)
@@ -183,16 +183,30 @@ class PyGdx(ApplicationListener):
                              textures = self.textures,
                              hitSound = self.dropsound)
 
-        # self.brokenRectangles = 0
-        # self.time = 0
-        # self.score = "Rectangles destroyed {}, Time {}".format(self.brokenRectangles) 
+        self.brokenBlocks = 0
+        self.gameTime = 0
+        self.deltaAcc = 0
+        self.updateScore()
 
-        # self.rainmusic.setLooping(True, True)
-        # self.rainmusic.play()
+    def updateScore(self):
+        self.score = "Blocks {}, Time {}".format(
+            self.brokenBlocks, self.gameTime)
+
+    def lose(self):
+        pass
+
+    def updateTimer(self):
+        self.deltaAcc += Gdx.graphics.getDeltaTime()
+        if self.deltaAcc >= 1:
+            self.gameTime += 1
+            self.deltaAcc = 0
 
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
+
+        self.updateTimer()
+        self.updateScore()
 
         self.camera.update()
         self.batch.setProjectionMatrix(self.camera.combined)
@@ -201,7 +215,7 @@ class PyGdx(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.Draw(self.batch)
-        self.scoreFont.draw(self.batch, "You score: ", 20, 20)
+        self.scoreFont.draw(self.batch, self.score, 20, 20)
         if self.state == LOST:
             self.bigCenteredText(self.batch, "You are lose!")
         elif self.state == WON:
@@ -228,11 +242,18 @@ class PyGdx(ApplicationListener):
                 self.state = LOST
 
             self.ball.UpdateCoordinates(
-                checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
+                checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
     def bigCenteredText(self, batch, text):
         self.scoreFont.draw(batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
+
+
+    def checkHitsBlock(self, ball):
+        hit = self.blocks.checkHit(ball)
+        if hit:
+            self.brokenBlocks += 1
+        return hit
 
     def resize(self, width, height):
         pass
