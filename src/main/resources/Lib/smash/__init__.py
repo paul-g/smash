@@ -9,10 +9,13 @@ BLOCK_DIM = 16
 BLOCK_ROWS = 14
 BLOCK_COLS = 40
 
+WIDTH = 800
+HEIGHT = 480
+
 config = LwjglApplicationConfiguration(
     title = "Smash!",
-    width = 800,
-    height = 480)
+    width = WIDTH,
+    height = HEIGHT)
 
 
 class Block(object):
@@ -36,9 +39,9 @@ class Blocks(object):
     def __init__(self, blockLayout, textures, hitSound):
         self.blocks = Array()
         # Center horizontally
-        offsetX = (config.width - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
+        offsetX = (WIDTH - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
         # Flush top vertically
-        offsetY = config.height - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
+        offsetY = HEIGHT - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
         for j in xrange(len(blockLayout)):
             for i in xrange(len(blockLayout[j])):
                 cell = blockLayout[j][i]
@@ -62,7 +65,6 @@ class Blocks(object):
 
 
 class Ball(object):
-
     def __init__(self, texture):
         self.SPEED = 10
         self.direction = Vector2(-1, 1).scl(self.SPEED)
@@ -97,7 +99,6 @@ class Ball(object):
             # left or right wall collision
             self.direction.x *= -1
         elif newY + radius > maxHeight or newY < radius:
-            import pdb; pdb.set_trace()
             self.direction.y *= -1
 
         newPosition = self.position.add(self.direction)
@@ -120,27 +121,15 @@ class PyGdx(ApplicationListener):
         self.dropsound = None
         self.rainmusic = None
         self.bucket = None
-        # TODO: Remove (Not used)
-        self.raindrops = None
         self.blocks = None
-
-        self.lastdrop = 0
-
-
-    def spawndrop(self):
-        raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, config.width - 64)
-        raindrop.y = config.height
-        raindrop.width = 64
-        raindrop.height = 64
-        self.raindrops.add(raindrop)
-        self.lastdrop = TimeUtils.nanoTime()
+        self.background = None
 
     def create(self):
         self.camera = OrthographicCamera()
-        self.camera.setToOrtho(False, config.width, config.height)
+        self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
 
+        self.background = Texture("assets/swahili.png")
         self.ball = Ball(Texture("assets/red_ball_16_16.png"))
         self.dropimg = Texture("assets/red_rectangle.png")
         self.textures = {
@@ -154,13 +143,10 @@ class PyGdx(ApplicationListener):
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         self.bucket = Rectangle()
-        self.bucket.x = (config.width / 2) - (64 / 2)
+        self.bucket.x = (WIDTH / 2) - (64 / 2)
         self.bucket.y = 20
         self.bucket.width = 64
         self.bucket.height = 64
-
-        self.raindrops = Array()
-        self.spawndrop()
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
@@ -179,6 +165,7 @@ class PyGdx(ApplicationListener):
 
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
+        self.batch.draw(self.background, 0, 0, WIDTH, HEIGHT)
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
         self.ball.Draw(self.batch)
@@ -193,20 +180,9 @@ class PyGdx(ApplicationListener):
         if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
 
         if self.bucket.x < 0: self.bucket.x = 0
-        if self.bucket.x > (config.width - 64): self.bucket.x = config.width - 64
+        if self.bucket.x > (WIDTH - 64): self.bucket.x = WIDTH - 64
 
-        if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
-
-        self.ball.UpdateCoordinates(config.height, config.width, self)
-
-        iterator = self.raindrops.iterator()
-        while iterator.hasNext():
-            raindrop = iterator.next()
-            raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-            if (raindrop.y + 64) < 0: iterator.remove()
-            if raindrop.overlaps(self.bucket):
-                self.dropsound.play()
-                iterator.remove()
+        self.ball.UpdateCoordinates(HEIGHT, WIDTH, self)
 
     def resize(self, width, height):
         pass
