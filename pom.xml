@@ -65,24 +65,6 @@
           <target>1.5</target>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>com.badlogicgames.gdx</groupId>
-        <artifactId>gdx</artifactId>
-        <version>0.9.9</version>
-      </plugin>
-      <plugin>
-        <groupId>com.badlogicgames.gdx</groupId>
-        <artifactId>gdx-backend-lwjgl</artifactId>
-        <version>0.9.9</version>
-      </plugin>
-      <plugin>
-        <groupId>com.badlogicgames.gdx</groupId>
-        <artifactId>gdx-platform</artifactId>
-        <version>0.9.9</version>
-        <configuration>
-           <classifier>natives-desktop</classifier>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   <dependencies>
@@ -90,6 +72,22 @@
       <groupId>org.python</groupId>
       <artifactId>jython-standalone</artifactId>
       <version>2.7-b1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx</artifactId>
+      <version>0.9.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-backend-lwjgl</artifactId>
+      <version>0.9.9</version>
+    </dependency>
+    <dependency>
+      <groupId>com.badlogicgames.gdx</groupId>
+      <artifactId>gdx-platform</artifactId>
+      <version>0.9.9</version>
+      <classifier>natives-desktop</classifier>
     </dependency>
   </dependencies>
   <properties>
