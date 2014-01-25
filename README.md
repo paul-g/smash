@@ -20,3 +20,8 @@ export CLASSPATH=libs/gdx.jar:libs/gdx-backend-lwjgl.jar:libs/gdx-natives.jar:li
 
 Then run `jython smash.py`
 
+# Self-contained jar
+
+To build a self-contained jar and run it, use:
+    mvn package
+    java -jar target/smash-1.0-jar-with-dependencies.jar eval
