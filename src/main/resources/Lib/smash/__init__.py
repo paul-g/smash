@@ -40,11 +40,12 @@ class PyGdx(ApplicationListener):
     def __init__(self):
         self.camera = None
         self.batch = None
-        self.texture = None
+        self.textures = None
         self.bucketimg = None
         self.dropsound = None
         self.rainmusic = None
         self.bucket = None
+        # TODO: Remove (Not used)
         self.raindrops = None
         self.blocks = None
 
