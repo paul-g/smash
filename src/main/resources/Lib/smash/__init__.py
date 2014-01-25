@@ -62,15 +62,15 @@ class PyGdx(ApplicationListener):
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
         for drop in self.raindrops:
             self.batch.draw(self.dropimg, drop.x, drop.y)
-            self.batch.end()
+        self.batch.end()
 
         if Gdx.input.isTouched():
             touchpos = Vector3()
             touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
             self.camera.unproject(touchpos)
             self.bucket.x = touchpos.x - (64 / 2)
-            if Gdx.input.isKeyPressed(Input.Keys.LEFT): self.bucket.x -= 200 * Gdx.graphics.getDeltaTime()
-            if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
+        if Gdx.input.isKeyPressed(Input.Keys.LEFT): self.bucket.x -= 200 * Gdx.graphics.getDeltaTime()
+        if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
 
         if self.bucket.x < 0: self.bucket.x = 0
         if self.bucket.x > (self.width - 64): self.bucket.x = self.width - 64
