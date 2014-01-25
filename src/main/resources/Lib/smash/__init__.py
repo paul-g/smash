@@ -5,6 +5,59 @@ from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
+BLOCK_DIM = 16
+BLOCK_ROWS = 14
+BLOCK_COLS = 40
+
+config = LwjglApplicationConfiguration(
+    title = "Smash!",
+    width = 800,
+    height = 480)
+
+class Block(object):
+    def __init__(self, x, y, texture, hitSound):
+        super(Block, self).__init__()
+        self.rectangle = Rectangle(x, y, 64, 64)
+        self.texture = texture
+        self.hitSound = hitSound
+
+    def hits(self, ball):
+        self.rectangle.overlaps(ball.rectangle)
+
+    def draw(self, batch):
+        batch.draw(self.texture, self.rectangle.x, self.rectangle.y)
+
+    def hit(self):
+        self.hitSound.play()
+
+class Blocks(object):
+    def __init__(self, blockLayout, textures, hitSound):
+        self.blocks = Array()
+        # Center horizontally
+        offsetX = (config.width - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
+        # Flush top vertically
+        offsetY = config.height - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
+        for j in xrange(len(blockLayout)):
+            for i in xrange(len(blockLayout[j])):
+                cell = blockLayout[j][i]
+                if cell != ' ':
+                    x = offsetX + i * (BLOCK_DIM + 1)
+                    y = offsetY + j * (BLOCK_DIM + 1)
+                    self.blocks.add(Block(x, y, textures[cell], hitSound))
+
+    def draw(self, batch):
+        for block in self.blocks:
+            batch.draw(block.texture, block.rectangle.x, block.rectangle.y)
+
+    def checkHit(self, ball):
+        iterator = self.blocks.iterator()
+        while iterator.hasNext():
+            block = iterator.next()
+            if block.hits(ball):
+                block.hit()
+                iterator.remove()
+                return block
+
 
 class Ball(object):
 
@@ -50,21 +103,22 @@ class PyGdx(ApplicationListener):
     def __init__(self):
         self.camera = None
         self.batch = None
-        self.texture = None
+        self.textures = None
         self.bucketimg = None
         self.dropsound = None
         self.rainmusic = None
         self.bucket = None
+        # TODO: Remove (Not used)
         self.raindrops = None
+        self.blocks = None
 
         self.lastdrop = 0
-        self.width = 800
-        self.height = 480
+
 
     def spawndrop(self):
         raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, self.width - 64)
-        raindrop.y = self.height
+        raindrop.x = MathUtils.random(0, config.width - 64)
+        raindrop.y = config.height
         raindrop.width = 64
         raindrop.height = 64
         self.raindrops.add(raindrop)
@@ -72,17 +126,26 @@ class PyGdx(ApplicationListener):
 
     def create(self):
         self.camera = OrthographicCamera()
-        self.camera.setToOrtho(False, self.width, self.height)
+        self.camera.setToOrtho(False, config.width, config.height)
         self.batch = SpriteBatch()
 
+<<<<<<< HEAD
         self.ball = Ball(Texture("assets/red_ball_16_16.png"))
         self.dropimg = Texture("assets/red_rectangle.png")
+=======
+        self.textures = {
+            "r": Texture("assets/red_rectangle.png"),
+            "b": Texture("assets/blue_rectangle.png"),
+            "g": Texture("assets/green_rectangle.png"),
+        }
+
+>>>>>>> 6538d5ef628088654bf817aafe532a9f3fe1269a
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         self.bucket = Rectangle()
-        self.bucket.x = (self.width / 2) - (64 / 2)
+        self.bucket.x = (config.width / 2) - (64 / 2)
         self.bucket.y = 20
         self.bucket.width = 64
         self.bucket.height = 64
@@ -90,21 +153,31 @@ class PyGdx(ApplicationListener):
         self.raindrops = Array()
         self.spawndrop()
 
+        with open("assets/checker_board.level") as f:
+            blockLayout = f.read().split("\n")
+        self.blocks = Blocks(blockLayout = blockLayout,
+                             textures = self.textures,
+                             hitSound = self.dropsound)
+
         self.rainmusic.setLooping(True, True)
         self.rainmusic.play()
 
     def render(self):
-        Gdx.gl.glClearColor(0,0,0.2,0)
+        Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
 
         self.camera.update()
 
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
+        self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
+<<<<<<< HEAD
         self.ball.Draw(self.batch)
         for drop in self.raindrops:
             self.batch.draw(self.dropimg, drop.x, drop.y)
+=======
+>>>>>>> 6538d5ef628088654bf817aafe532a9f3fe1269a
         self.batch.end()
 
         if Gdx.input.isTouched():
@@ -116,7 +189,7 @@ class PyGdx(ApplicationListener):
         if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
 
         if self.bucket.x < 0: self.bucket.x = 0
-        if self.bucket.x > (self.width - 64): self.bucket.x = self.width - 64
+        if self.bucket.x > (config.width - 64): self.bucket.x = config.width - 64
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
 
@@ -142,19 +215,14 @@ class PyGdx(ApplicationListener):
 
     def dispose(self):
         self.batch.dispose()
-        self.dropimg.dispose()
+        for (_, texture) in self.textures.items():
+            texture.dispose()
         self.bucketimg.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
 
-
 def main():
-    cfg = LwjglApplicationConfiguration()
-    cfg.title = "PyGdx";
-    cfg.width = 800
-    cfg.height = 480
-
-    LwjglApplication(PyGdx(), cfg)
+    LwjglApplication(PyGdx(), config)
 
 
 if __name__ == '__main__':
