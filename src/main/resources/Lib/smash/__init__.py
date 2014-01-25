@@ -177,6 +177,9 @@ class PyGdx(ApplicationListener):
         # self.rainmusic.setLooping(True, True)
         # self.rainmusic.play()
 
+    def lose(self):
+        pass
+
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
@@ -203,6 +206,9 @@ class PyGdx(ApplicationListener):
             self.paddle.rectangle.x = 0
         if self.paddle.rectangle.x > (WIDTH - 64):
             self.paddle.rectangle.x = WIDTH - 64
+
+        if self.ball.rectangle.y < self.paddle.rectangle.height:
+            self.lose()
 
         self.ball.UpdateCoordinates(
             checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
