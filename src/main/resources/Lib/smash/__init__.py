@@ -110,6 +110,8 @@ class Ball(object):
         block = pyGdy.checkHitsRectangle(self)
         if block:
             # Hit a block
+            blockBottom = block.rectangle.getY()
+            blockTop = blockBottom + block.rectangle.height
             ballTop = self.position.y + self.ball.radius
             ballBottom = self.position.y - self.ball.radius
             if blockBottom >= ballTop or blockTop <= ballBottom:
