@@ -129,17 +129,14 @@ class PyGdx(ApplicationListener):
         self.camera.setToOrtho(False, config.width, config.height)
         self.batch = SpriteBatch()
 
-<<<<<<< HEAD
         self.ball = Ball(Texture("assets/red_ball_16_16.png"))
         self.dropimg = Texture("assets/red_rectangle.png")
-=======
         self.textures = {
             "r": Texture("assets/red_rectangle.png"),
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
 
->>>>>>> 6538d5ef628088654bf817aafe532a9f3fe1269a
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
@@ -172,12 +169,7 @@ class PyGdx(ApplicationListener):
         self.batch.begin()
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
-<<<<<<< HEAD
         self.ball.Draw(self.batch)
-        for drop in self.raindrops:
-            self.batch.draw(self.dropimg, drop.x, drop.y)
-=======
->>>>>>> 6538d5ef628088654bf817aafe532a9f3fe1269a
         self.batch.end()
 
         if Gdx.input.isTouched():
@@ -193,7 +185,7 @@ class PyGdx(ApplicationListener):
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
 
-        self.ball.UpdateCoordinates(self.height, self.width)
+        self.ball.UpdateCoordinates(config.height, config.width)
 
         iterator = self.raindrops.iterator()
         while iterator.hasNext():
