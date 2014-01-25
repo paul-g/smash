@@ -5,6 +5,15 @@ from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
+block_dim = 16
+block_rows = 17
+block_cols = 47
+
+config = LwjglApplicationConfiguration(
+    title = "Smash!",
+    width = block_cols * (block_dim + 1) + 20,
+    height = (100 + block_rows * (block_dim + 1)))
+
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
         super(Block, self).__init__()
@@ -22,14 +31,14 @@ class Block(object):
         self.hitSound.play()
 
 class Blocks(object):
-    def __init__(self, blockLayout, textures, hitSound, height, width):
+    def __init__(self, blockLayout, textures, hitSound):
         self.blocks = Array()
         for j in xrange(len(blockLayout)):
             for i in xrange(len(blockLayout[j])):
                 cell = blockLayout[j][i]
                 if cell != ' ':
-                    x = i * 17
-                    y = height - ((j + 1) * 17)
+                    x = 10 + i * (block_dim + 1)
+                    y = (-10) + config.height - ((j + 1) * (block_dim + 1))
                     self.blocks.add(Block(x, y, textures[cell], hitSound))
 
     def draw(self, batch):
@@ -59,14 +68,12 @@ class PyGdx(ApplicationListener):
         self.blocks = None
 
         self.lastdrop = 0
-        self.width = 800
-        self.height = 480
 
 
     def spawndrop(self):
         raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, self.width - 64)
-        raindrop.y = self.height
+        raindrop.x = MathUtils.random(0, config.width - 64)
+        raindrop.y = config.height
         raindrop.width = 64
         raindrop.height = 64
         self.raindrops.add(raindrop)
@@ -74,7 +81,7 @@ class PyGdx(ApplicationListener):
 
     def create(self):
         self.camera = OrthographicCamera()
-        self.camera.setToOrtho(False, self.width, self.height)
+        self.camera.setToOrtho(False, config.width, config.height)
         self.batch = SpriteBatch()
 
         self.textures = {
@@ -88,7 +95,7 @@ class PyGdx(ApplicationListener):
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         self.bucket = Rectangle()
-        self.bucket.x = (self.width / 2) - (64 / 2)
+        self.bucket.x = (config.width / 2) - (64 / 2)
         self.bucket.y = 20
         self.bucket.width = 64
         self.bucket.height = 64
@@ -96,16 +103,11 @@ class PyGdx(ApplicationListener):
         self.raindrops = Array()
         self.spawndrop()
 
-        triangle = ["r br r r rb r",
-                    " b  r   r  b ",
-                    "  gg     gg  ",
-                    "    rr rr    ",
-                    "      r      "]
-        self.blocks = Blocks(blockLayout = triangle,
+        with open("assets/checker_board.level") as f:
+            blockLayout = f.read().split("\n")
+        self.blocks = Blocks(blockLayout = blockLayout,
                              textures = self.textures,
-                             hitSound = self.dropsound,
-                             height = self.height,
-                             width = self.width)
+                             hitSound = self.dropsound)
 
         self.rainmusic.setLooping(True, True)
         self.rainmusic.play()
@@ -131,7 +133,7 @@ class PyGdx(ApplicationListener):
         if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
 
         if self.bucket.x < 0: self.bucket.x = 0
-        if self.bucket.x > (self.width - 64): self.bucket.x = self.width - 64
+        if self.bucket.x > (config.width - 64): self.bucket.x = config.width - 64
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
 
@@ -161,14 +163,8 @@ class PyGdx(ApplicationListener):
         self.dropsound.dispose()
         self.rainmusic.dispose()
 
-
 def main():
-    cfg = LwjglApplicationConfiguration()
-    cfg.title = "PyGdx";
-    cfg.width = 800
-    cfg.height = 480
-
-    LwjglApplication(PyGdx(), cfg)
+    LwjglApplication(PyGdx(), config)
 
 
 if __name__ == '__main__':
