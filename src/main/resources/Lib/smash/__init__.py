@@ -241,6 +241,9 @@ class PyGdx(ApplicationListener):
             if self.ball.rectangle.y < self.paddle.rectangle.height - 5:
                 self.state = LOST
 
+            if self.blocks.blocks.size == 0:
+                self.state = WIN
+
             self.ball.UpdateCoordinates(
                 checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
