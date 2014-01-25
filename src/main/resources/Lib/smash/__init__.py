@@ -242,7 +242,7 @@ class PyGdx(ApplicationListener):
                 self.state = LOST
 
             if self.blocks.blocks.size == 0:
-                self.state = WIN
+                self.state = WON
 
             self.ball.UpdateCoordinates(
                 checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
