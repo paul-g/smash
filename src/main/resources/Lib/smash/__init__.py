@@ -6,12 +6,35 @@ from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
 class Block(object):
-    def __init__(self, x, y):
+    def __init__(self, x, y, texture, hitSound):
         super(Block, self).__init__()
         self.rectangle = Rectangle(x, y, 64, 64)
+        self.texture = texture
+        self.hitSound = hitSound
 
-    def wasHit(self, ball):
+    def hits(self, ball):
         self.rectangle.overlaps(ball.rectangle)
+
+    def draw(self, batch):
+        batch.draw(self.texture, self.rectangle.x, self.rectangle.y)
+
+    def hit(self):
+        self.hitSound.play()
+
+class Blocks(object):
+    def __init__(self, blockLayout, textures, hitSound, height, width):
+        self.blocks = Array()
+        for j in xrange(len(blockLayout)):
+            for i in xrange(len(blockLayout[j])):
+                cell = blockLayout[j][i]
+                if cell != ' ':
+                    x = i * 17
+                    y = height - ((j + 1) * 17)
+                    self.blocks.add(Block(x, y, textures[cell], hitSound))
+
+    def draw(self, batch):
+        for block in self.blocks:
+            batch.draw(block.texture, block.rectangle.x, block.rectangle.y)
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -23,10 +46,12 @@ class PyGdx(ApplicationListener):
         self.rainmusic = None
         self.bucket = None
         self.raindrops = None
+        self.blocks = None
 
         self.lastdrop = 0
         self.width = 800
         self.height = 480
+
 
     def spawndrop(self):
         raindrop = Rectangle()
@@ -56,6 +81,15 @@ class PyGdx(ApplicationListener):
         self.raindrops = Array()
         self.spawndrop()
 
+        blockLayout = ["r rr r",
+                       " r  r ",
+                       "  rr  "]
+        hitSound = self.dropsound
+        textures = {"r": self.dropimg}
+        height = self.height
+        width = self.width
+        self.blocks = Blocks(blockLayout, textures, hitSound, height, width)
+
         self.rainmusic.setLooping(True, True)
         self.rainmusic.play()
 
@@ -67,6 +101,7 @@ class PyGdx(ApplicationListener):
 
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
+        self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
         for drop in self.raindrops:
             self.batch.draw(self.dropimg, drop.x, drop.y)
