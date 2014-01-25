@@ -5,9 +5,9 @@ from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
-BLOCK_DIM = 16
-BLOCK_ROWS = 14
-BLOCK_COLS = 40
+BLOCK_DIM = 32
+BLOCK_ROWS = 7
+BLOCK_COLS = 20
 
 WIDTH = 800
 HEIGHT = 480
@@ -21,7 +21,7 @@ config = LwjglApplicationConfiguration(
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
         super(Block, self).__init__()
-        self.rectangle = Rectangle(x, y, 64, 64)
+        self.rectangle = Rectangle(x, y, BLOCK_DIM, BLOCK_DIM)
         self.texture = texture
         self.hitSound = hitSound
 
@@ -29,7 +29,7 @@ class Block(object):
         return self.rectangle.overlaps(ball.rectangle)
 
     def draw(self, batch):
-        batch.draw(self.texture, self.rectangle.x, self.rectangle.y)
+        batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
 
     def hit(self):
         self.hitSound.play()
@@ -52,7 +52,7 @@ class Blocks(object):
 
     def draw(self, batch):
         for block in self.blocks:
-            batch.draw(block.texture, block.rectangle.x, block.rectangle.y)
+            block.draw(batch)
 
     def checkHit(self, ball):
         iterator = self.blocks.iterator()
