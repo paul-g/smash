@@ -23,5 +23,6 @@ Then run `jython smash.py`
 # Self-contained jar
 
 To build a self-contained jar and run it, use:
+
     mvn package
     java -jar target/smash-1.0-jar-with-dependencies.jar eval
