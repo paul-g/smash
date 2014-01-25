@@ -76,9 +76,10 @@ class Ball(object):
         self.ball.radius = 8
 
         self.rectangle = Rectangle()
-        self.rectangle.setPosition(self.position)
-        self.rectangle.width = 8
-        self.rectangle.height = 8
+        self.rectangle.setPosition(self.position.sub(
+            Vector2(self.ball.radius, self.ball.radius)))
+        self.rectangle.width = 16
+        self.rectangle.height = 16
 
 
     def Draw(self, batch):
