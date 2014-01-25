@@ -9,10 +9,13 @@ BLOCK_DIM = 16
 BLOCK_ROWS = 14
 BLOCK_COLS = 40
 
+WIDTH = 800
+HEIGHT = 480
+
 config = LwjglApplicationConfiguration(
     title = "Smash!",
-    width = 800,
-    height = 480)
+    width = WIDTH,
+    height = HEIGHT)
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
@@ -34,9 +37,9 @@ class Blocks(object):
     def __init__(self, blockLayout, textures, hitSound):
         self.blocks = Array()
         # Center horizontally
-        offsetX = (config.width - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
+        offsetX = (WIDTH - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
         # Flush top vertically
-        offsetY = config.height - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
+        offsetY = HEIGHT - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
         for j in xrange(len(blockLayout)):
             for i in xrange(len(blockLayout[j])):
                 cell = blockLayout[j][i]
@@ -60,7 +63,6 @@ class Blocks(object):
 
 
 class Ball(object):
-
     def __init__(self, texture):
         self.SPEED = 5
         self.direction = Vector2(-1, 1).scl(self.SPEED)
@@ -74,7 +76,6 @@ class Ball(object):
 
     def Draw(self, batch):
         batch.draw(self.texture, self.ball.x, self.ball.y)
-
 
     def UpdateCoordinates(self, maxHeight, maxWidth):
 
@@ -118,8 +119,8 @@ class PyGdx(ApplicationListener):
 
     def spawndrop(self):
         raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, config.width - 64)
-        raindrop.y = config.height
+        raindrop.x = MathUtils.random(0, WIDTH - 64)
+        raindrop.y = HEIGHT
         raindrop.width = 64
         raindrop.height = 64
         self.raindrops.add(raindrop)
@@ -127,7 +128,7 @@ class PyGdx(ApplicationListener):
 
     def create(self):
         self.camera = OrthographicCamera()
-        self.camera.setToOrtho(False, config.width, config.height)
+        self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
 
         self.background = Texture("assets/swahili.png")
@@ -144,7 +145,7 @@ class PyGdx(ApplicationListener):
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         self.bucket = Rectangle()
-        self.bucket.x = (config.width / 2) - (64 / 2)
+        self.bucket.x = (WIDTH / 2) - (64 / 2)
         self.bucket.y = 20
         self.bucket.width = 64
         self.bucket.height = 64
@@ -169,7 +170,7 @@ class PyGdx(ApplicationListener):
 
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
-        self.batch.draw(self.background, 0, 0, config.width, config.height)
+        self.batch.draw(self.background, 0, 0, WIDTH, HEIGHT)
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
         self.ball.Draw(self.batch)
@@ -184,11 +185,11 @@ class PyGdx(ApplicationListener):
         if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
 
         if self.bucket.x < 0: self.bucket.x = 0
-        if self.bucket.x > (config.width - 64): self.bucket.x = config.width - 64
+        if self.bucket.x > (WIDTH - 64): self.bucket.x = WIDTH - 64
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
 
-        self.ball.UpdateCoordinates(config.height, config.width)
+        self.ball.UpdateCoordinates(HEIGHT, WIDTH)
 
         iterator = self.raindrops.iterator()
         while iterator.hasNext():
