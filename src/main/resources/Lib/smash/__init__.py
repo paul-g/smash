@@ -109,22 +109,8 @@ class PyGdx(ApplicationListener):
         self.dropsound = None
         self.rainmusic = None
         self.bucket = None
-        # TODO: Remove (Not used)
-        self.raindrops = None
         self.blocks = None
         self.background = None
-
-        self.lastdrop = 0
-
-
-    def spawndrop(self):
-        raindrop = Rectangle()
-        raindrop.x = MathUtils.random(0, WIDTH - 64)
-        raindrop.y = HEIGHT
-        raindrop.width = 64
-        raindrop.height = 64
-        self.raindrops.add(raindrop)
-        self.lastdrop = TimeUtils.nanoTime()
 
     def create(self):
         self.camera = OrthographicCamera()
@@ -149,9 +135,6 @@ class PyGdx(ApplicationListener):
         self.bucket.y = 20
         self.bucket.width = 64
         self.bucket.height = 64
-
-        self.raindrops = Array()
-        self.spawndrop()
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
@@ -187,18 +170,7 @@ class PyGdx(ApplicationListener):
         if self.bucket.x < 0: self.bucket.x = 0
         if self.bucket.x > (WIDTH - 64): self.bucket.x = WIDTH - 64
 
-        if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
-
         self.ball.UpdateCoordinates(HEIGHT, WIDTH)
-
-        iterator = self.raindrops.iterator()
-        while iterator.hasNext():
-            raindrop = iterator.next()
-            raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-            if (raindrop.y + 64) < 0: iterator.remove()
-            if raindrop.overlaps(self.bucket):
-                self.dropsound.play()
-                iterator.remove()
 
     def resize(self, width, height):
         pass
