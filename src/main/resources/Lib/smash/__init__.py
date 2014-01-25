@@ -118,10 +118,10 @@ class Ball(object):
         newY = newPosition.y
         radius = self.ball.radius
 
-        if newX < radius or newX > WIDTH:
+        if newX < radius or newX > WIDTH - 2 * radius:
             # left or right wall collision
             self.direction.x *= -1
-        elif newY + radius > HEIGHT or newY < radius:
+        elif newY + radius > HEIGHT - 2 * radius or newY < radius:
             self.direction.y *= -1
 
         newPosition = self.position.add(self.direction)
