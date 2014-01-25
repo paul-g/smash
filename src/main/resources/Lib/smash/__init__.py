@@ -37,6 +37,7 @@ class Block(object):
 
 class Blocks(object):
     def __init__(self, blockLayout, textures, hitSound):
+        super(Blocks, self).__init__()
         self.blocks = Array()
         # Center horizontally
         offsetX = (WIDTH - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
@@ -64,8 +65,21 @@ class Blocks(object):
                 return block
 
 
+class Paddle(object):
+    def __init__(self, texture):
+        super(Paddle, self).__init__()
+        self.texture = texture
+        paddleWidth = 100
+        paddleHeight = 50
+        self.rectangle = Rectangle((WIDTH - paddleWidth) / 2, 0, paddleWidth, paddleHeight)
+
+    def draw(self, batch):
+        batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
+
+
 class Ball(object):
     def __init__(self, texture):
+        super(Ball, self).__init__()
         self.SPEED = 5
         self.direction = Vector2(-1, 1).scl(self.SPEED)
         self.position = Vector2(100, 100)
@@ -125,10 +139,9 @@ class PyGdx(ApplicationListener):
         self.camera = None
         self.batch = None
         self.textures = None
-        self.bucketimg = None
+        self.paddle = None
         self.dropsound = None
         self.rainmusic = None
-        self.bucket = None
         self.blocks = None
         self.background = None
 
@@ -146,15 +159,9 @@ class PyGdx(ApplicationListener):
             "g": Texture("assets/green_rectangle.png"),
         }
 
-        self.bucketimg = Texture("assets/bucket.png")
+        self.paddle = Paddle(Texture("assets/paddle.png"))
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
-
-        self.bucket = Rectangle()
-        self.bucket.x = (WIDTH / 2) - (64 / 2)
-        self.bucket.y = 20
-        self.bucket.width = 64
-        self.bucket.height = 64
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
@@ -175,7 +182,7 @@ class PyGdx(ApplicationListener):
         self.batch.begin()
         self.batch.draw(self.background, 0, 0, WIDTH, HEIGHT)
         self.blocks.draw(self.batch)
-        self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
+        self.paddle.draw(self.batch)
         self.ball.Draw(self.batch)
         self.batch.end()
 
@@ -183,12 +190,14 @@ class PyGdx(ApplicationListener):
             touchpos = Vector3()
             touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
             self.camera.unproject(touchpos)
-            self.bucket.x = touchpos.x - (64 / 2)
-        if Gdx.input.isKeyPressed(Input.Keys.LEFT): self.bucket.x -= 200 * Gdx.graphics.getDeltaTime()
-        if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.bucket.x += 200 * Gdx.graphics.getDeltaTime()
+            self.paddle.rectangle.x = touchpos.x - (64 / 2)
+        if Gdx.input.isKeyPressed(Input.Keys.LEFT): self.paddle.rectangle.x -= 200 * Gdx.graphics.getDeltaTime()
+        if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.paddle.rectangle.x += 200 * Gdx.graphics.getDeltaTime()
 
-        if self.bucket.x < 0: self.bucket.x = 0
-        if self.bucket.x > (WIDTH - 64): self.bucket.x = WIDTH - 64
+        if self.paddle.rectangle.x < 0:
+            self.paddle.rectangle.x = 0
+        if self.paddle.rectangle.x > (WIDTH - 64):
+            self.paddle.rectangle.x = WIDTH - 64
 
         self.ball.UpdateCoordinates(HEIGHT, WIDTH, self)
 
@@ -205,7 +214,7 @@ class PyGdx(ApplicationListener):
         self.batch.dispose()
         for (_, texture) in self.textures.items():
             texture.dispose()
-        self.bucketimg.dispose()
+        self.paddle.texture.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
 
