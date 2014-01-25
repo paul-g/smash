@@ -221,8 +221,8 @@ class PyGdx(ApplicationListener):
 
             if self.paddle.rectangle.x < 0:
                 self.paddle.rectangle.x = 0
-            if self.paddle.rectangle.x > (WIDTH - 64):
-                self.paddle.rectangle.x = WIDTH - 64
+            if self.paddle.rectangle.x > (WIDTH - self.paddle.rectangle.width):
+                self.paddle.rectangle.x = WIDTH - self.paddle.rectangle.width
 
             if self.ball.rectangle.y < self.paddle.rectangle.height - 5:
                 self.state = LOST
