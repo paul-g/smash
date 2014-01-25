@@ -2,8 +2,9 @@ from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationCo
 from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input
-from com.badlogic.gdx.graphics.g2d import SpriteBatch
+from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
+from datetime import datetime
 
 BLOCK_DIM = 32
 BLOCK_ROWS = 7
@@ -161,6 +162,7 @@ class PyGdx(ApplicationListener):
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
+        self.scoreFont = BitmapFont()
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
@@ -172,6 +174,10 @@ class PyGdx(ApplicationListener):
                              textures = self.textures,
                              hitSound = self.dropsound)
 
+        # self.brokenRectangles = 0
+        # self.time = 0
+        # self.score = "Rectangles destroyed {}, Time {}".format(self.brokenRectangles) 
+
         # self.rainmusic.setLooping(True, True)
         # self.rainmusic.play()
 
@@ -180,13 +186,13 @@ class PyGdx(ApplicationListener):
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
 
         self.camera.update()
-
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
         self.batch.draw(self.background, 0, 0, WIDTH, HEIGHT)
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.Draw(self.batch)
+        self.scoreFont.draw(self.batch, "Your score: ", 20, 20)
         self.batch.end()
 
         if Gdx.input.isTouched():
