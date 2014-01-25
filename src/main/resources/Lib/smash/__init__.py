@@ -66,7 +66,7 @@ class Blocks(object):
 
 class Ball(object):
     def __init__(self, texture):
-        self.SPEED = 10
+        self.SPEED = 5
         self.direction = Vector2(-1, 1).scl(self.SPEED)
         self.position = Vector2(100, 100)
         self.texture = texture
@@ -107,6 +107,14 @@ class Ball(object):
         self.rectangle.setPosition(newPosition)
 
         block = pyGdy.checkHitsRectangle(self)
+        if block:
+            blockX = block.rectangle.getX()
+            blockY = block.rectangle.getY()
+            if blockX > self.position.x or blockX < self.position.x:
+                # block to the left/right of ball
+                self.direction.x *= -1
+            elif blockY > self.position.y or blockY < self.position.y:
+                self.direction.y *= -1
 
 
         # TODO Check if ball is colliding with paddle
