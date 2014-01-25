@@ -76,6 +76,9 @@ class Paddle(object):
     def draw(self, batch):
         batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
 
+    def hits(self, ball):
+        return self.rectangle.overlaps(ball.rectangle)
+
 
 class Ball(object):
     def __init__(self, texture):
@@ -100,7 +103,7 @@ class Ball(object):
         batch.draw(self.texture, self.ball.x, self.ball.y)
 
 
-    def UpdateCoordinates(self, checkHitsRectangle):
+    def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
 
         newPosition = prevPosition.add(self.direction)
@@ -120,7 +123,7 @@ class Ball(object):
         self.ball.setPosition(newPosition)
         self.rectangle.setPosition(newPosition)
 
-        block = checkHitsRectangle(self)
+        block = checkHitsBlock(self)
         if block:
             # Hit a block
             blockBottom = block.rectangle.getY()
@@ -132,8 +135,8 @@ class Ball(object):
             else:
                 self.direction.x *= -1
 
-
-        # TODO Check if ball is colliding with paddle
+        if checkHitsPaddle(self):
+            self.direction.y *= -1
 
 
 class PyGdx(ApplicationListener):
@@ -201,7 +204,9 @@ class PyGdx(ApplicationListener):
         if self.paddle.rectangle.x > (WIDTH - 64):
             self.paddle.rectangle.x = WIDTH - 64
 
-        self.ball.UpdateCoordinates(lambda ball: self.blocks.checkHit(ball))
+        self.ball.UpdateCoordinates(
+            checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
+            checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
     def resize(self, width, height):
         pass
