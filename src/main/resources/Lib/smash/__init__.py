@@ -77,6 +77,9 @@ class Paddle(object):
     def draw(self, batch):
         batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
 
+    def hits(self, ball):
+        return self.rectangle.overlaps(ball.rectangle)
+
 
 class Ball(object):
     def __init__(self, texture):
@@ -101,8 +104,7 @@ class Ball(object):
         batch.draw(self.texture, self.ball.x, self.ball.y)
 
 
-    def UpdateCoordinates(self, maxHeight, maxWidth, pyGdy):
-
+    def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
 
         newPosition = prevPosition.add(self.direction)
@@ -111,10 +113,10 @@ class Ball(object):
         newY = newPosition.y
         radius = self.ball.radius
 
-        if newX < radius or newX > maxWidth:
+        if newX < radius or newX > WIDTH:
             # left or right wall collision
             self.direction.x *= -1
-        elif newY + radius > maxHeight or newY < radius:
+        elif newY + radius > HEIGHT or newY < radius:
             self.direction.y *= -1
 
         newPosition = self.position.add(self.direction)
@@ -122,7 +124,7 @@ class Ball(object):
         self.ball.setPosition(newPosition)
         self.rectangle.setPosition(newPosition)
 
-        block = pyGdy.checkHitsRectangle(self)
+        block = checkHitsBlock(self)
         if block:
             # Hit a block
             blockBottom = block.rectangle.getY()
@@ -134,8 +136,8 @@ class Ball(object):
             else:
                 self.direction.x *= -1
 
-
-        # TODO Check if ball is colliding with paddle
+        if checkHitsPaddle(self):
+            self.direction.y *= -1
 
 
 class PyGdx(ApplicationListener):
@@ -181,6 +183,9 @@ class PyGdx(ApplicationListener):
         # self.rainmusic.setLooping(True, True)
         # self.rainmusic.play()
 
+    def lose(self):
+        pass
+
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
@@ -208,7 +213,12 @@ class PyGdx(ApplicationListener):
         if self.paddle.rectangle.x > (WIDTH - 64):
             self.paddle.rectangle.x = WIDTH - 64
 
-        self.ball.UpdateCoordinates(HEIGHT, WIDTH, self)
+        if self.ball.rectangle.y < self.paddle.rectangle.height:
+            self.lose()
+
+        self.ball.UpdateCoordinates(
+            checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
+            checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
     def resize(self, width, height):
         pass
@@ -226,9 +236,6 @@ class PyGdx(ApplicationListener):
         self.paddle.texture.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
-
-    def checkHitsRectangle(self, ball):
-       return self.blocks.checkHit(ball)
 
 def main():
     LwjglApplication(PyGdx(), config)
