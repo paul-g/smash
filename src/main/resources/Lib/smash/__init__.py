@@ -14,6 +14,7 @@ config = LwjglApplicationConfiguration(
     width = 800,
     height = 480)
 
+
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
         super(Block, self).__init__()
@@ -22,13 +23,14 @@ class Block(object):
         self.hitSound = hitSound
 
     def hits(self, ball):
-        self.rectangle.overlaps(ball.rectangle)
+        return self.rectangle.overlaps(ball.rectangle)
 
     def draw(self, batch):
         batch.draw(self.texture, self.rectangle.x, self.rectangle.y)
 
     def hit(self):
         self.hitSound.play()
+
 
 class Blocks(object):
     def __init__(self, blockLayout, textures, hitSound):
@@ -62,21 +64,26 @@ class Blocks(object):
 class Ball(object):
 
     def __init__(self, texture):
-        self.SPEED = 5
+        self.SPEED = 10
         self.direction = Vector2(-1, 1).scl(self.SPEED)
-        self.position = Vector2(20, 100)
+        self.position = Vector2(100, 100)
         self.texture = texture
 
         self.ball = Circle()
         self.ball.setPosition(self.position)
         self.ball.radius = 8
 
+        self.rectangle = Rectangle()
+        self.rectangle.setPosition(self.position)
+        self.rectangle.width = 8
+        self.rectangle.height = 8
+
 
     def Draw(self, batch):
         batch.draw(self.texture, self.ball.x, self.ball.y)
 
 
-    def UpdateCoordinates(self, maxHeight, maxWidth):
+    def UpdateCoordinates(self, maxHeight, maxWidth, pyGdy):
 
         prevPosition = Vector2(self.position)
 
@@ -90,11 +97,16 @@ class Ball(object):
             # left or right wall collision
             self.direction.x *= -1
         elif newY + radius > maxHeight or newY < radius:
+            import pdb; pdb.set_trace()
             self.direction.y *= -1
 
-        self.ball.setPosition(self.position.add(self.direction))
+        newPosition = self.position.add(self.direction)
 
-        # TODO Check if ball is colliding with rectangles
+        self.ball.setPosition(newPosition)
+        self.rectangle.setPosition(newPosition)
+
+        block = pyGdy.checkHitsRectangle(self)
+
 
         # TODO Check if ball is colliding with paddle
 
@@ -156,8 +168,8 @@ class PyGdx(ApplicationListener):
                              textures = self.textures,
                              hitSound = self.dropsound)
 
-        self.rainmusic.setLooping(True, True)
-        self.rainmusic.play()
+        # self.rainmusic.setLooping(True, True)
+        # self.rainmusic.play()
 
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
@@ -185,7 +197,7 @@ class PyGdx(ApplicationListener):
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
 
-        self.ball.UpdateCoordinates(config.height, config.width)
+        self.ball.UpdateCoordinates(config.height, config.width, self)
 
         iterator = self.raindrops.iterator()
         while iterator.hasNext():
@@ -212,6 +224,9 @@ class PyGdx(ApplicationListener):
         self.bucketimg.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
+
+    def checkHitsRectangle(self, ball):
+       return self.blocks.checkHit(ball)
 
 def main():
     LwjglApplication(PyGdx(), config)
