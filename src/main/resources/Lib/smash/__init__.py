@@ -100,8 +100,7 @@ class Ball(object):
         batch.draw(self.texture, self.ball.x, self.ball.y)
 
 
-    def UpdateCoordinates(self, maxHeight, maxWidth, pyGdy):
-
+    def UpdateCoordinates(self, checkHitsRectangle):
         prevPosition = Vector2(self.position)
 
         newPosition = prevPosition.add(self.direction)
@@ -110,10 +109,10 @@ class Ball(object):
         newY = newPosition.y
         radius = self.ball.radius
 
-        if newX < radius or newX > maxWidth:
+        if newX < radius or newX > WIDTH:
             # left or right wall collision
             self.direction.x *= -1
-        elif newY + radius > maxHeight or newY < radius:
+        elif newY + radius > HEIGHT or newY < radius:
             self.direction.y *= -1
 
         newPosition = self.position.add(self.direction)
@@ -121,7 +120,7 @@ class Ball(object):
         self.ball.setPosition(newPosition)
         self.rectangle.setPosition(newPosition)
 
-        block = pyGdy.checkHitsRectangle(self)
+        block = checkHitsRectangle(self)
         if block:
             # Hit a block
             blockBottom = block.rectangle.getY()
@@ -202,7 +201,7 @@ class PyGdx(ApplicationListener):
         if self.paddle.rectangle.x > (WIDTH - 64):
             self.paddle.rectangle.x = WIDTH - 64
 
-        self.ball.UpdateCoordinates(HEIGHT, WIDTH, self)
+        self.ball.UpdateCoordinates(lambda ball: self.blocks.checkHit(ball))
 
     def resize(self, width, height):
         pass
@@ -220,9 +219,6 @@ class PyGdx(ApplicationListener):
         self.paddle.texture.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
-
-    def checkHitsRectangle(self, ball):
-       return self.blocks.checkHit(ball)
 
 def main():
     LwjglApplication(PyGdx(), config)
