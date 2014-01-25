@@ -1,0 +1,2 @@
+import smash
+smash.main()
