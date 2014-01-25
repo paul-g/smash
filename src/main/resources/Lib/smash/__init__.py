@@ -5,14 +5,14 @@ from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
-block_dim = 16
-block_rows = 17
-block_cols = 47
+BLOCK_DIM = 16
+BLOCK_ROWS = 14
+BLOCK_COLS = 40
 
 config = LwjglApplicationConfiguration(
     title = "Smash!",
-    width = block_cols * (block_dim + 1) + 20,
-    height = (100 + block_rows * (block_dim + 1)))
+    width = 800,
+    height = 480)
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
@@ -33,12 +33,16 @@ class Block(object):
 class Blocks(object):
     def __init__(self, blockLayout, textures, hitSound):
         self.blocks = Array()
+        # Center horizontally
+        offsetX = (config.width - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
+        # Flush top vertically
+        offsetY = config.height - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
         for j in xrange(len(blockLayout)):
             for i in xrange(len(blockLayout[j])):
                 cell = blockLayout[j][i]
                 if cell != ' ':
-                    x = 10 + i * (block_dim + 1)
-                    y = (-10) + config.height - ((j + 1) * (block_dim + 1))
+                    x = offsetX + i * (BLOCK_DIM + 1)
+                    y = offsetY + j * (BLOCK_DIM + 1)
                     self.blocks.add(Block(x, y, textures[cell], hitSound))
 
     def draw(self, batch):
@@ -113,7 +117,7 @@ class PyGdx(ApplicationListener):
         self.rainmusic.play()
 
     def render(self):
-        Gdx.gl.glClearColor(0,0,0.2,0)
+        Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
 
         self.camera.update()
