@@ -1,6 +1,6 @@
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
-from com.badlogic.gdx.math import MathUtils, Rectangle, Vector3
+from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
@@ -58,6 +58,47 @@ class Blocks(object):
                 iterator.remove()
                 return block
 
+
+class Ball(object):
+
+    def __init__(self, texture):
+        self.SPEED = 5
+        self.direction = Vector2(-1, 1).scl(self.SPEED)
+        self.position = Vector2(20, 100)
+        self.texture = texture
+
+        self.ball = Circle()
+        self.ball.setPosition(self.position)
+        self.ball.radius = 8
+
+
+    def Draw(self, batch):
+        batch.draw(self.texture, self.ball.x, self.ball.y)
+
+
+    def UpdateCoordinates(self, maxHeight, maxWidth):
+
+        prevPosition = Vector2(self.position)
+
+        newPosition = prevPosition.add(self.direction)
+
+        newX = newPosition.x
+        newY = newPosition.y
+        radius = self.ball.radius
+
+        if newX < radius or newX > maxWidth:
+            # left or right wall collision
+            self.direction.x *= -1
+        elif newY + radius > maxHeight or newY < radius:
+            self.direction.y *= -1
+
+        self.ball.setPosition(self.position.add(self.direction))
+
+        # TODO Check if ball is colliding with rectangles
+
+        # TODO Check if ball is colliding with paddle
+
+
 class PyGdx(ApplicationListener):
     def __init__(self):
         self.camera = None
@@ -90,7 +131,8 @@ class PyGdx(ApplicationListener):
         self.batch = SpriteBatch()
 
         self.background = Texture("assets/swahili.png")
-
+        self.ball = Ball(Texture("assets/red_ball_16_16.png"))
+        self.dropimg = Texture("assets/red_rectangle.png")
         self.textures = {
             "r": Texture("assets/red_rectangle.png"),
             "b": Texture("assets/blue_rectangle.png"),
@@ -130,6 +172,7 @@ class PyGdx(ApplicationListener):
         self.batch.draw(self.background, 0, 0, config.width, config.height)
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
+        self.ball.Draw(self.batch)
         self.batch.end()
 
         if Gdx.input.isTouched():
@@ -144,6 +187,8 @@ class PyGdx(ApplicationListener):
         if self.bucket.x > (config.width - 64): self.bucket.x = config.width - 64
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
+
+        self.ball.UpdateCoordinates(config.height, config.width)
 
         iterator = self.raindrops.iterator()
         while iterator.hasNext():
