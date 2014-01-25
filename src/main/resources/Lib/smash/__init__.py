@@ -5,6 +5,14 @@ from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 
+class Block(object):
+    def __init__(self, x, y):
+        super(Block, self).__init__()
+        self.rectangle = Rectangle(x, y, 64, 64)
+
+    def wasHit(self, ball):
+        self.rectangle.overlaps(ball.rectangle)
+
 class PyGdx(ApplicationListener):
     def __init__(self):
         self.camera = None
