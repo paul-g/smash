@@ -203,8 +203,9 @@ class PyGdx(ApplicationListener):
         self.ball.Draw(self.batch)
         self.scoreFont.draw(self.batch, "You score: ", 20, 20)
         if self.state == LOST:
-            text = "You are lose!"
-            self.scoreFont.draw(self.batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
+            self.bigCenteredText(self.batch, "You are lose!")
+        elif self.state == WON:
+            self.bigCenteredText(self.batch, "A winner is you!")
         self.batch.end()
 
         if self.state == PLAYING:
@@ -223,12 +224,15 @@ class PyGdx(ApplicationListener):
             if self.paddle.rectangle.x > (WIDTH - 64):
                 self.paddle.rectangle.x = WIDTH - 64
 
-            if self.ball.rectangle.y < self.paddle.rectangle.height:
+            if self.ball.rectangle.y < self.paddle.rectangle.height - 5:
                 self.state = LOST
 
             self.ball.UpdateCoordinates(
                 checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
+
+    def bigCenteredText(self, batch, text):
+        self.scoreFont.draw(batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
 
     def resize(self, width, height):
         pass
