@@ -68,8 +68,11 @@ class PyGdx(ApplicationListener):
         self.camera.setToOrtho(False, self.width, self.height)
         self.batch = SpriteBatch()
 
-        red_rectangle = Texture("assets/red_rectangle.png")
-        self.textures = {"r": red_rectangle}
+        self.textures = {
+            "r": Texture("assets/red_rectangle.png"),
+            "b": Texture("assets/blue_rectangle.png"),
+            "g": Texture("assets/green_rectangle.png"),
+        }
 
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
@@ -84,9 +87,9 @@ class PyGdx(ApplicationListener):
         self.raindrops = Array()
         self.spawndrop()
 
-        triangle = ["r rr r r rr r",
-                    " r  r   r  r ",
-                    "  rr     rr  ",
+        triangle = ["r br r r rb r",
+                    " b  r   r  b ",
+                    "  gg     gg  ",
                     "    rr rr    ",
                     "      r      "]
         self.blocks = Blocks(blockLayout = triangle,
