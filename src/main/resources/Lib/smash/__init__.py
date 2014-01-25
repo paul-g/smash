@@ -1,9 +1,50 @@
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
-from com.badlogic.gdx.math import MathUtils, Rectangle, Vector3
+from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input
 from com.badlogic.gdx.graphics.g2d import SpriteBatch
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
+
+
+class Ball(object):
+
+    def __init__(self, texture):
+        self.SPEED = 5
+        self.direction = Vector2(-1, 1).scl(self.SPEED)
+        self.position = Vector2(20, 100)
+        self.texture = texture
+
+        self.ball = Circle()
+        self.ball.setPosition(self.position)
+        self.ball.radius = 8
+
+
+    def Draw(self, batch):
+        batch.draw(self.texture, self.ball.x, self.ball.y)
+
+
+    def UpdateCoordinates(self, maxHeight, maxWidth):
+
+        prevPosition = Vector2(self.position)
+
+        newPosition = prevPosition.add(self.direction)
+
+        newX = newPosition.x
+        newY = newPosition.y
+        radius = self.ball.radius
+
+        if newX < radius or newX > maxWidth:
+            # left or right wall collision
+            self.direction.x *= -1
+        elif newY + radius > maxHeight or newY < radius:
+            self.direction.y *= -1
+
+        self.ball.setPosition(self.position.add(self.direction))
+
+        # TODO Check if ball is colliding with rectangles
+
+        # TODO Check if ball is colliding with paddle
+
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -34,6 +75,7 @@ class PyGdx(ApplicationListener):
         self.camera.setToOrtho(False, self.width, self.height)
         self.batch = SpriteBatch()
 
+        self.ball = Ball(Texture("assets/red_ball_16_16.png"))
         self.dropimg = Texture("assets/red_rectangle.png")
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
@@ -60,6 +102,7 @@ class PyGdx(ApplicationListener):
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
+        self.ball.Draw(self.batch)
         for drop in self.raindrops:
             self.batch.draw(self.dropimg, drop.x, drop.y)
         self.batch.end()
@@ -76,6 +119,8 @@ class PyGdx(ApplicationListener):
         if self.bucket.x > (self.width - 64): self.bucket.x = self.width - 64
 
         if (TimeUtils.nanoTime() - self.lastdrop) > 1000000000: self.spawndrop()
+
+        self.ball.UpdateCoordinates(self.height, self.width)
 
         iterator = self.raindrops.iterator()
         while iterator.hasNext():
