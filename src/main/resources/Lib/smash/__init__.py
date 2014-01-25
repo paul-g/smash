@@ -34,7 +34,7 @@ class PyGdx(ApplicationListener):
         self.camera.setToOrtho(False, self.width, self.height)
         self.batch = SpriteBatch()
 
-        self.dropimg = Texture("assets/droplet.png")
+        self.dropimg = Texture("assets/red_rectangle.png")
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
@@ -110,3 +110,7 @@ def main():
     cfg.height = 480
 
     LwjglApplication(PyGdx(), cfg)
+
+
+if __name__ == '__main__':
+    main()
