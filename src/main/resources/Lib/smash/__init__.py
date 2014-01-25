@@ -70,6 +70,7 @@ class PyGdx(ApplicationListener):
         # TODO: Remove (Not used)
         self.raindrops = None
         self.blocks = None
+        self.background = None
 
         self.lastdrop = 0
 
@@ -87,6 +88,8 @@ class PyGdx(ApplicationListener):
         self.camera = OrthographicCamera()
         self.camera.setToOrtho(False, config.width, config.height)
         self.batch = SpriteBatch()
+
+        self.background = Texture("assets/swahili.png")
 
         self.textures = {
             "r": Texture("assets/red_rectangle.png"),
@@ -124,6 +127,7 @@ class PyGdx(ApplicationListener):
 
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
+        self.batch.draw(self.background, 0, 0, config.width, config.height)
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
         self.batch.end()
