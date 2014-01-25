@@ -13,6 +13,11 @@ BLOCK_COLS = 20
 WIDTH = 800
 HEIGHT = 480
 
+PLAYING = 1
+PAUSED = 2
+LOST = 3
+WON = 4
+
 config = LwjglApplicationConfiguration(
     title = "Smash!",
     width = WIDTH,
@@ -150,11 +155,13 @@ class PyGdx(ApplicationListener):
         self.rainmusic = None
         self.blocks = None
         self.background = None
+        self.state = None
 
     def create(self):
         self.camera = OrthographicCamera()
         self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
+        self.state = PLAYING
 
         self.background = Texture("assets/swahili.png")
         self.ball = Ball(Texture("assets/red_ball_16_16.png"))
@@ -183,9 +190,6 @@ class PyGdx(ApplicationListener):
         # self.rainmusic.setLooping(True, True)
         # self.rainmusic.play()
 
-    def lose(self):
-        pass
-
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
@@ -197,28 +201,34 @@ class PyGdx(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.Draw(self.batch)
-        self.scoreFont.draw(self.batch, "Your score: ", 20, 20)
+        self.scoreFont.draw(self.batch, "You score: ", 20, 20)
+        if self.state == LOST:
+            text = "You are lose!"
+            self.scoreFont.draw(self.batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
         self.batch.end()
 
-        if Gdx.input.isTouched():
-            touchpos = Vector3()
-            touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
-            self.camera.unproject(touchpos)
-            self.paddle.rectangle.x = touchpos.x - (64 / 2)
-        if Gdx.input.isKeyPressed(Input.Keys.LEFT): self.paddle.rectangle.x -= 200 * Gdx.graphics.getDeltaTime()
-        if Gdx.input.isKeyPressed(Input.Keys.RIGHT): self.paddle.rectangle.x += 200 * Gdx.graphics.getDeltaTime()
+        if self.state == PLAYING:
+            if Gdx.input.isTouched():
+                touchpos = Vector3()
+                touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
+                self.camera.unproject(touchpos)
+                self.paddle.rectangle.x = touchpos.x - (64 / 2)
+            if Gdx.input.isKeyPressed(Input.Keys.LEFT):
+                self.paddle.rectangle.x -= 200 * Gdx.graphics.getDeltaTime()
+            if Gdx.input.isKeyPressed(Input.Keys.RIGHT):
+                self.paddle.rectangle.x += 200 * Gdx.graphics.getDeltaTime()
 
-        if self.paddle.rectangle.x < 0:
-            self.paddle.rectangle.x = 0
-        if self.paddle.rectangle.x > (WIDTH - 64):
-            self.paddle.rectangle.x = WIDTH - 64
+            if self.paddle.rectangle.x < 0:
+                self.paddle.rectangle.x = 0
+            if self.paddle.rectangle.x > (WIDTH - 64):
+                self.paddle.rectangle.x = WIDTH - 64
 
-        if self.ball.rectangle.y < self.paddle.rectangle.height:
-            self.lose()
+            if self.ball.rectangle.y < self.paddle.rectangle.height:
+                self.state = LOST
 
-        self.ball.UpdateCoordinates(
-            checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
-            checkHitsPaddle = lambda ball: self.paddle.hits(ball))
+            self.ball.UpdateCoordinates(
+                checkHitsBlock = lambda ball: self.blocks.checkHit(ball),
+                checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
     def resize(self, width, height):
         pass
