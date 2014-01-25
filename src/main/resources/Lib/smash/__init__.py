@@ -67,7 +67,9 @@ class PyGdx(ApplicationListener):
         self.camera.setToOrtho(False, self.width, self.height)
         self.batch = SpriteBatch()
 
-        self.dropimg = Texture("assets/red_rectangle.png")
+        red_rectangle = Texture("assets/red_rectangle.png")
+        self.textures = {"r": red_rectangle}
+
         self.bucketimg = Texture("assets/bucket.png")
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
         self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
@@ -81,14 +83,16 @@ class PyGdx(ApplicationListener):
         self.raindrops = Array()
         self.spawndrop()
 
-        blockLayout = ["r rr r",
-                       " r  r ",
-                       "  rr  "]
-        hitSound = self.dropsound
-        textures = {"r": self.dropimg}
-        height = self.height
-        width = self.width
-        self.blocks = Blocks(blockLayout, textures, hitSound, height, width)
+        triangle = ["r rr r r rr r",
+                    " r  r   r  r ",
+                    "  rr     rr  ",
+                    "    rr rr    ",
+                    "      r      "]
+        self.blocks = Blocks(blockLayout = triangle,
+                             textures = self.textures,
+                             hitSound = self.dropsound,
+                             height = self.height,
+                             width = self.width)
 
         self.rainmusic.setLooping(True, True)
         self.rainmusic.play()
@@ -103,8 +107,6 @@ class PyGdx(ApplicationListener):
         self.batch.begin()
         self.blocks.draw(self.batch)
         self.batch.draw(self.bucketimg, self.bucket.x, self.bucket.y)
-        for drop in self.raindrops:
-            self.batch.draw(self.dropimg, drop.x, drop.y)
         self.batch.end()
 
         if Gdx.input.isTouched():
@@ -140,7 +142,8 @@ class PyGdx(ApplicationListener):
 
     def dispose(self):
         self.batch.dispose()
-        self.dropimg.dispose()
+        for (_, texture) in self.textures.items():
+            texture.dispose()
         self.bucketimg.dispose()
         self.dropsound.dispose()
         self.rainmusic.dispose()
