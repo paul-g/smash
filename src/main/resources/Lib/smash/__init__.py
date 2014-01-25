@@ -109,13 +109,13 @@ class Ball(object):
 
         block = pyGdy.checkHitsRectangle(self)
         if block:
-            blockX = block.rectangle.getX()
-            blockY = block.rectangle.getY()
-            if blockX > self.position.x or blockX < self.position.x:
-                # block to the left/right of ball
-                self.direction.x *= -1
-            elif blockY > self.position.y or blockY < self.position.y:
+            # Hit a block
+            ballTop = self.position.y + self.ball.radius
+            ballBottom = self.position.y - self.ball.radius
+            if blockBottom >= ballTop or blockTop <= ballBottom:
                 self.direction.y *= -1
+            else:
+                self.direction.x *= -1
 
 
         # TODO Check if ball is colliding with paddle
