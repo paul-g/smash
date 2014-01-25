@@ -36,6 +36,15 @@ class Blocks(object):
         for block in self.blocks:
             batch.draw(block.texture, block.rectangle.x, block.rectangle.y)
 
+    def checkHit(self, ball):
+        iterator = self.blocks.iterator()
+        while iterator.hasNext():
+            block = iterator.next()
+            if block.hits(ball):
+                block.hit()
+                iterator.remove()
+                return block
+
 class PyGdx(ApplicationListener):
     def __init__(self):
         self.camera = None
