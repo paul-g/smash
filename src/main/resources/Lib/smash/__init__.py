@@ -29,6 +29,9 @@ class PowerUp(object):
     def __init__(self):
         pass
 
+    def applyEffect(self, ball):
+        print "Applying power up effect"
+
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
@@ -151,6 +154,10 @@ class Ball(object):
 
         if checkHitsPaddle(self):
             self.direction.y *= -1
+
+        # apply power ups
+        for powerUp in self.powerUps:
+            powerUp.applyEffect(self)
 
     def addPowerUp(self, powerUp):
         self.powerUps.add(powerUp)
