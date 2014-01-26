@@ -24,6 +24,12 @@ config = LwjglApplicationConfiguration(
     height = HEIGHT)
 
 
+class PowerUp(object):
+
+    def __init__(self):
+        pass
+
+
 class Block(object):
     def __init__(self, x, y, texture, hitSound):
         super(Block, self).__init__()
@@ -39,6 +45,9 @@ class Block(object):
 
     def hit(self):
         self.hitSound.play()
+
+    def getPowerUp(self):
+        return None
 
 
 class Blocks(object):
@@ -93,6 +102,7 @@ class Ball(object):
         self.direction = Vector2(-1, 1).scl(self.SPEED)
         self.position = Vector2(100, 100)
         self.texture = texture
+        self.powerUps = []
 
         self.ball = Circle()
         self.ball.setPosition(self.position)
@@ -104,10 +114,8 @@ class Ball(object):
         self.rectangle.width = 16
         self.rectangle.height = 16
 
-
     def Draw(self, batch):
         batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
-
 
     def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
@@ -144,6 +152,8 @@ class Ball(object):
         if checkHitsPaddle(self):
             self.direction.y *= -1
 
+    def addPowerUp(self, powerUp):
+        self.powerUps.add(powerUp)
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -251,12 +261,14 @@ class PyGdx(ApplicationListener):
     def bigCenteredText(self, batch, text):
         self.scoreFont.draw(batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
 
-
     def checkHitsBlock(self, ball):
-        hit = self.blocks.checkHit(ball)
-        if hit:
+        block = self.blocks.checkHit(ball)
+        if block:
             self.brokenBlocks += 1
-        return hit
+            powerUp = block.getPowerUp()
+            if powerUp:
+                ball.addPowerUp(powerUp)
+        return block
 
     def resize(self, width, height):
         pass
