@@ -1,3 +1,5 @@
+import random
+
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
@@ -25,13 +27,22 @@ config = LwjglApplicationConfiguration(
 
 
 class PowerUp(object):
-
     def __init__(self):
         pass
 
     def applyEffect(self, ball):
         print "Applying power up effect"
 
+class FireBall(PowerUp):
+    def __init__(self):
+        super(FireBall, self).__init__()
+
+    def applyEffect(self, ball):
+        print "Fireball effect"
+        ball.blockDirectionChange = 1
+
+    def removeEffect(self, ball):
+        ball.resetBlockDirectionChange()
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -55,7 +66,7 @@ class Block(object):
 
 
 class Blocks(object):
-    def __init__(self, blockLayout, textures, hitSound):
+    def __init__(self, blockLayout, textures, hitSound, powerUps):
         super(Blocks, self).__init__()
         self.blocks = Array()
         # Center horizontally
@@ -68,7 +79,14 @@ class Blocks(object):
                 if cell != ' ':
                     x = offsetX + i * (BLOCK_DIM + 1)
                     y = offsetY + j * (BLOCK_DIM + 1)
-                    self.blocks.add(Block(x, y, textures[cell], hitSound))
+                    powerUp = self.getPowerUp(powerUps[cell])
+                    self.blocks.add(
+                        Block(x, y, textures[cell], hitSound, powerUp))
+
+    def getPowerUp(self, powerUp):
+        return powerUp[0]
+#        return powerUp[0] if random.random() < powerUp[1] else None
+
 
     def draw(self, batch):
         for block in self.blocks:
@@ -118,8 +136,13 @@ class Ball(object):
         self.rectangle.width = 16
         self.rectangle.height = 16
 
+        self.blockDirectionChange = -1
+
     def Draw(self, batch):
         batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
+
+    def resetBlockDirectionChange(self):
+        self.blockDirectionChange = -1
 
     def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
@@ -149,19 +172,20 @@ class Ball(object):
             ballTop = self.position.y + self.ball.radius
             ballBottom = self.position.y - self.ball.radius
             if blockBottom >= ballTop or blockTop <= ballBottom:
-                self.direction.y *= -1
+                self.direction.y *= self.blockDirectionChange
             else:
-                self.direction.x *= -1
+                self.direction.x *= self.blockDirectionChange
 
         if checkHitsPaddle(self):
             self.direction.y *= -1
 
-        # apply power ups
-        for powerUp in self.powerUps:
-            powerUp.applyEffect(self)
-
     def addPowerUp(self, powerUp):
-        self.powerUps.add(powerUp)
+        self.powerUps.append(powerUp)
+        powerUp.applyEffect(self)
+
+    def removePowerUp(self, powerUp):
+        # how do I do this?
+        powerUp.removeEffect(self)
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -190,6 +214,11 @@ class PyGdx(ApplicationListener):
             "g": Texture("assets/green_rectangle.png"),
         }
         self.scoreFont = BitmapFont()
+        self.powerUps = {
+            "r": (FireBall(), 0.5),
+            "b": (None, 1),
+            "g": (None, 1)
+            }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
         self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
@@ -199,7 +228,8 @@ class PyGdx(ApplicationListener):
             blockLayout = f.read().split("\n")
         self.blocks = Blocks(blockLayout = blockLayout,
                              textures = self.textures,
-                             hitSound = self.dropsound)
+                             hitSound = self.dropsound,
+                             powerUps = self.powerUps)
 
         self.brokenBlocks = 0
         self.gameTime = 0
