@@ -36,13 +36,16 @@ class PowerUp(object):
 class FireBall(PowerUp):
     def __init__(self):
         super(FireBall, self).__init__()
+        self.texture = Texture("assets/fire_ball.png")
 
     def applyEffect(self, ball):
         print "Fireball effect"
         ball.blockDirectionChange = 1
+        ball.setTexture(self.texture)
 
     def removeEffect(self, ball):
         ball.resetBlockDirectionChange()
+        ball.resetTexture()
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -84,8 +87,7 @@ class Blocks(object):
                         Block(x, y, textures[cell], hitSound, powerUp))
 
     def getPowerUp(self, powerUp):
-        return powerUp[0]
-#        return powerUp[0] if random.random() < powerUp[1] else None
+        return powerUp[0] if random.random() < powerUp[1] else None
 
 
     def draw(self, batch):
@@ -120,9 +122,10 @@ class Paddle(object):
 class Ball(object):
     def __init__(self, texture):
         super(Ball, self).__init__()
-        self.SPEED = 5
+        self.SPEED = 2
         self.direction = Vector2(-1, 1).scl(self.SPEED)
         self.position = Vector2(100, 100)
+        self.defaultTexture = texture
         self.texture = texture
         self.powerUps = []
 
@@ -140,6 +143,12 @@ class Ball(object):
 
     def draw(self, batch):
         batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
+
+    def setTexture(self, texture):
+        self.texture = texture
+
+    def resetTexture(self):
+        self.texture = self.defaultTexture
 
     def resetBlockDirectionChange(self):
         self.blockDirectionChange = -1
@@ -215,7 +224,7 @@ class PyGdx(ApplicationListener):
         }
         self.scoreFont = BitmapFont()
         self.powerUps = {
-            "r": (FireBall(), 0.5),
+            "r": (FireBall(), 0.1),
             "b": (None, 1),
             "g": (None, 1)
             }
