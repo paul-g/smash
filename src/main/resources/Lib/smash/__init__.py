@@ -34,11 +34,12 @@ class PowerUp(object):
 
 
 class Block(object):
-    def __init__(self, x, y, texture, hitSound):
+    def __init__(self, x, y, texture, hitSound, powerUp = None):
         super(Block, self).__init__()
         self.rectangle = Rectangle(x, y, BLOCK_DIM, BLOCK_DIM)
         self.texture = texture
         self.hitSound = hitSound
+        self.powerUp = powerUp
 
     def hits(self, ball):
         return self.rectangle.overlaps(ball.rectangle)
@@ -50,7 +51,7 @@ class Block(object):
         self.hitSound.play()
 
     def getPowerUp(self):
-        return None
+        return self.powerUp
 
 
 class Blocks(object):
