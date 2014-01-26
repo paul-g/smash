@@ -138,13 +138,13 @@ class Ball(object):
 
         self.blockDirectionChange = -1
 
-    def Draw(self, batch):
+    def draw(self, batch):
         batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
 
     def resetBlockDirectionChange(self):
         self.blockDirectionChange = -1
 
-    def UpdateCoordinates(self, checkHitsBlock, checkHitsPaddle):
+    def updateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
 
         newPosition = prevPosition.add(self.direction)
@@ -262,7 +262,7 @@ class PyGdx(ApplicationListener):
         self.batch.draw(self.background, 0, 0, WIDTH, HEIGHT)
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
-        self.ball.Draw(self.batch)
+        self.ball.draw(self.batch)
         self.scoreFont.draw(self.batch, self.score, 20, 20)
         if self.state == LOST:
             self.bigCenteredText(self.batch, "You are lose!")
@@ -292,7 +292,7 @@ class PyGdx(ApplicationListener):
             if self.blocks.blocks.size == 0:
                 self.state = WON
 
-            self.ball.UpdateCoordinates(
+            self.ball.updateCoordinates(
                 checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
