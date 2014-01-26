@@ -13,7 +13,7 @@ BLOCK_ROWS = 7
 BLOCK_COLS = 20
 
 WIDTH = 800
-HEIGHT = 480
+HEIGHT = 700
 
 PLAYING = 1
 PAUSED = 2
@@ -27,25 +27,40 @@ config = LwjglApplicationConfiguration(
 
 
 class PowerUp(object):
-    def __init__(self):
-        pass
+    def __init__(self, lifetime):
+        self.lifetime = lifetime
+        self.timeRemaining = 0
 
     def applyEffect(self, ball):
-        print "Applying power up effect"
+        raise NotImplementedError()
+
+    def removeEffect(self, ball):
+        raise NotImplementedError()
+
+    def update(self):
+        self.timeRemaining -= 1
+
+    def resetRemaining(self):
+        self.timeRemaining = self.lifetime
+
+    def hasExpired(self):
+        return self.timeRemaining <= 0
 
 class FireBall(PowerUp):
-    def __init__(self):
-        super(FireBall, self).__init__()
+    def __init__(self, lifetime):
+        super(FireBall, self).__init__(lifetime)
         self.texture = Texture("assets/fire_ball.png")
 
     def applyEffect(self, ball):
-        print "Fireball effect"
         ball.blockDirectionChange = 1
         ball.setTexture(self.texture)
 
     def removeEffect(self, ball):
         ball.resetBlockDirectionChange()
         ball.resetTexture()
+
+    def __str__(self):
+        return "Fireball %s s" % (self.timeRemaining, )
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -127,7 +142,7 @@ class Ball(object):
         self.position = Vector2(100, 100)
         self.defaultTexture = texture
         self.texture = texture
-        self.powerUps = []
+        self.powerUps = set()
 
         self.ball = Circle()
         self.ball.setPosition(self.position)
@@ -152,6 +167,14 @@ class Ball(object):
 
     def resetBlockDirectionChange(self):
         self.blockDirectionChange = -1
+
+    def updatePowerUps(self):
+        map(lambda powerUp: powerUp.update(), self.powerUps)
+        expiredPowerUps = filter(
+            lambda powerUp: powerUp.hasExpired(),
+            self.powerUps)
+        for p in expiredPowerUps:
+            self.removePowerUp(p)
 
     def updateCoordinates(self, checkHitsBlock, checkHitsPaddle):
         prevPosition = Vector2(self.position)
@@ -189,12 +212,16 @@ class Ball(object):
             self.direction.y *= -1
 
     def addPowerUp(self, powerUp):
-        self.powerUps.append(powerUp)
+        self.powerUps.add(powerUp)
         powerUp.applyEffect(self)
 
     def removePowerUp(self, powerUp):
         # how do I do this?
         powerUp.removeEffect(self)
+        self.powerUps.remove(powerUp)
+
+    def getPowerUpsString(self):
+        return [str(p) for p in self.powerUps]
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -224,7 +251,7 @@ class PyGdx(ApplicationListener):
         }
         self.scoreFont = BitmapFont()
         self.powerUps = {
-            "r": (FireBall(), 0.1),
+            "r": (FireBall(2), 0.1),
             "b": (None, 1),
             "g": (None, 1)
             }
@@ -246,8 +273,8 @@ class PyGdx(ApplicationListener):
         self.updateScore()
 
     def updateScore(self):
-        self.score = "Blocks {}, Time {}".format(
-            self.brokenBlocks, self.gameTime)
+        self.score = "Blocks {}, Time {}, PowerUps: {}".format(
+            self.brokenBlocks, self.gameTime, self.ball.getPowerUpsString())
 
     def lose(self):
         pass
@@ -255,6 +282,7 @@ class PyGdx(ApplicationListener):
     def updateTimer(self):
         self.deltaAcc += Gdx.graphics.getDeltaTime()
         if self.deltaAcc >= 1:
+            self.updatePowerUps()
             self.gameTime += 1
             self.deltaAcc = 0
 
@@ -315,7 +343,11 @@ class PyGdx(ApplicationListener):
             powerUp = block.getPowerUp()
             if powerUp:
                 ball.addPowerUp(powerUp)
+                powerUp.resetRemaining()
         return block
+
+    def updatePowerUps(self):
+        self.ball.updatePowerUps()
 
     def resize(self, width, height):
         pass
