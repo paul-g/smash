@@ -137,7 +137,7 @@ class Paddle(object):
 class Ball(object):
     def __init__(self, texture):
         super(Ball, self).__init__()
-        self.SPEED = 2
+        self.SPEED = 3
         self.direction = Vector2(-1, 1).scl(self.SPEED)
         self.position = Vector2(100, 100)
         self.defaultTexture = texture
