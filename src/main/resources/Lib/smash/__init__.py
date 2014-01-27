@@ -62,6 +62,23 @@ class FireBall(PowerUp):
     def __str__(self):
         return "Fireball %s s" % (self.timeRemaining, )
 
+
+class LargeBall(PowerUp):
+    def __init__(self, lifetime):
+        super(LargeBall, self).__init__(lifetime)
+        self.texture = Texture("assets/red_ball_32_32.png")
+
+    def applyEffect(self, ball):
+        ball.setRadius(16)
+        ball.setTexture(self.texture)
+
+    def removeEffect(self, ball):
+        ball.resetRadius()
+        ball.resetTexture()
+
+    def __str__(self):
+        return "Largeball %s s" % (self.timeRemaining, )
+
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
         super(Block, self).__init__()
@@ -144,20 +161,33 @@ class Ball(object):
         self.texture = texture
         self.powerUps = set()
 
+        self.defaultRadius = 8
+
         self.ball = Circle()
         self.ball.setPosition(self.position)
-        self.ball.radius = 8
+        self.ball.radius = self.defaultRadius
 
         self.rectangle = Rectangle()
-        self.rectangle.setPosition(self.position.sub(
-            Vector2(self.ball.radius, self.ball.radius)))
-        self.rectangle.width = 16
-        self.rectangle.height = 16
+        self.setRectanglePosition()
 
         self.blockDirectionChange = -1
 
+    def setRectanglePosition(self):
+        self.rectangle.setPosition(self.position.sub(
+            Vector2(self.ball.radius, self.ball.radius)))
+        self.rectangle.width = 2 * self.ball.radius
+        self.rectangle.height = 2 * self.ball.radius
+
     def draw(self, batch):
         batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
+
+    def setRadius(self, radius):
+        self.ball.radius = radius
+        self.setRectanglePosition()
+
+    def resetRadius(self):
+        self.ball.radius = self.defaultRadius
+        self.setRectanglePosition()
 
     def setTexture(self, texture):
         self.texture = texture
@@ -253,7 +283,7 @@ class PyGdx(ApplicationListener):
         self.powerUps = {
             "r": (FireBall(2), 0.1),
             "b": (None, 1),
-            "g": (None, 1)
+            "g": (LargeBall(2), 0.1)
             }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
