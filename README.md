@@ -18,7 +18,7 @@ Add the following to the classpath (for Windows you should probably change ':' t
 export CLASSPATH=libs/gdx.jar:libs/gdx-backend-lwjgl.jar:libs/gdx-natives.jar:libs/gdx-sources.jar:libs/gdx-backend-lwjgl-natives.jar
 ```
 
-Then run `jython smash.py`
+Then run `jython src/main/resources/Lib/smash/__init__.py`
 
 # Self-contained jar
 
