@@ -25,6 +25,7 @@ config = LwjglApplicationConfiguration(
     width = WIDTH,
     height = HEIGHT)
 
+TICK_TIME = 1.0 / 30
 
 class PowerUp(object):
     def __init__(self, lifetime):
@@ -37,14 +38,15 @@ class PowerUp(object):
     def removeEffect(self, ball):
         raise NotImplementedError()
 
-    def update(self):
-        self.timeRemaining -= 1
+    def tick(self, delta):
+        self.timeRemaining -= delta
 
     def resetRemaining(self):
         self.timeRemaining = self.lifetime
 
     def hasExpired(self):
         return self.timeRemaining <= 0
+
 
 class FireBall(PowerUp):
     def __init__(self, lifetime):
@@ -60,7 +62,7 @@ class FireBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Fireball %s s" % (self.timeRemaining, )
+        return "Fireball(%.1f)" % (self.timeRemaining, )
 
 
 class LargeBall(PowerUp):
@@ -77,7 +79,7 @@ class LargeBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Largeball %s s" % (self.timeRemaining, )
+        return "Largeball(%.1f)" % (self.timeRemaining, )
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -120,7 +122,6 @@ class Blocks(object):
 
     def getPowerUp(self, powerUp):
         return powerUp[0] if random.random() < powerUp[1] else None
-
 
     def draw(self, batch):
         for block in self.blocks:
@@ -198,11 +199,10 @@ class Ball(object):
     def resetBlockDirectionChange(self):
         self.blockDirectionChange = -1
 
-    def updatePowerUps(self):
-        map(lambda powerUp: powerUp.update(), self.powerUps)
-        expiredPowerUps = filter(
-            lambda powerUp: powerUp.hasExpired(),
-            self.powerUps)
+    def tick(self, delta):
+        for powerUp in self.powerUps:
+            powerUp.tick(delta)
+        expiredPowerUps = [powerUp for powerUp in self.powerUps if  powerUp.hasExpired()]
         for p in expiredPowerUps:
             self.removePowerUp(p)
 
@@ -246,12 +246,14 @@ class Ball(object):
         powerUp.applyEffect(self)
 
     def removePowerUp(self, powerUp):
-        # how do I do this?
         powerUp.removeEffect(self)
         self.powerUps.remove(powerUp)
 
     def getPowerUpsString(self):
-        return [str(p) for p in self.powerUps]
+        if len(self.powerUps) > 0:
+            return " ".join([str(powerUp) for powerUp in self.powerUps])
+        else:
+            return "Lame"
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -259,8 +261,8 @@ class PyGdx(ApplicationListener):
         self.batch = None
         self.textures = None
         self.paddle = None
-        self.dropsound = None
-        self.rainmusic = None
+        self.dropSound = None
+        self.rainMusic = None
         self.blocks = None
         self.background = None
         self.state = None
@@ -279,7 +281,7 @@ class PyGdx(ApplicationListener):
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
-        self.scoreFont = BitmapFont()
+        self.hudFont = BitmapFont()
         self.powerUps = {
             "r": (FireBall(2), 0.1),
             "b": (None, 1),
@@ -287,42 +289,29 @@ class PyGdx(ApplicationListener):
             }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
-        self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
-        self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
+        self.dropSound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
+        self.rainMusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
         self.blocks = Blocks(blockLayout = blockLayout,
                              textures = self.textures,
-                             hitSound = self.dropsound,
+                             hitSound = self.dropSound,
                              powerUps = self.powerUps)
 
         self.brokenBlocks = 0
-        self.gameTime = 0
         self.deltaAcc = 0
-        self.updateScore()
+        self.playTime = 0
 
-    def updateScore(self):
-        self.score = "Blocks {}, Time {}, PowerUps: {}".format(
-            self.brokenBlocks, self.gameTime, self.ball.getPowerUpsString())
+    def score(self):
+        return "Blocks %d, Time %.1f, Rating: %s" % (
+            self.brokenBlocks, self.playTime, self.ball.getPowerUpsString())
 
     def lose(self):
         pass
 
-    def updateTimer(self):
-        self.deltaAcc += Gdx.graphics.getDeltaTime()
-        if self.deltaAcc >= 1:
-            self.updatePowerUps()
-            self.gameTime += 1
-            self.deltaAcc = 0
-
-    def render(self):
-        Gdx.gl.glClearColor(0, 0, 0, 0)
-        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
-
-        self.updateTimer()
-        self.updateScore()
-
+    def draw(self):
+        """ Do any and all drawing. """
         self.camera.update()
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
@@ -330,23 +319,27 @@ class PyGdx(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.draw(self.batch)
-        self.scoreFont.draw(self.batch, self.score, 20, 20)
+        self.hudFont.draw(self.batch, self.score(), 20, 20)
         if self.state == LOST:
             self.bigCenteredText(self.batch, "You are lose!")
         elif self.state == WON:
             self.bigCenteredText(self.batch, "A winner is you!")
         self.batch.end()
 
+    def tick(self, delta):
+        """ Another 1/60 seconds have passed.  Update state. """
         if self.state == PLAYING:
+            self.playTime += delta
+
             if Gdx.input.isTouched():
                 touchpos = Vector3()
                 touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
                 self.camera.unproject(touchpos)
                 self.paddle.rectangle.x = touchpos.x - (64 / 2)
             if Gdx.input.isKeyPressed(Input.Keys.LEFT):
-                self.paddle.rectangle.x -= 200 * Gdx.graphics.getDeltaTime()
+                self.paddle.rectangle.x -= 200 * delta
             if Gdx.input.isKeyPressed(Input.Keys.RIGHT):
-                self.paddle.rectangle.x += 200 * Gdx.graphics.getDeltaTime()
+                self.paddle.rectangle.x += 200 * delta
 
             if self.paddle.rectangle.x < 0:
                 self.paddle.rectangle.x = 0
@@ -359,12 +352,24 @@ class PyGdx(ApplicationListener):
             if self.blocks.blocks.size == 0:
                 self.state = WON
 
+            self.ball.tick(delta)
             self.ball.updateCoordinates(
                 checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
+    def render(self):
+        Gdx.gl.glClearColor(0, 0, 0, 0)
+        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
+
+        self.deltaAcc += Gdx.graphics.getDeltaTime()
+        while self.deltaAcc > TICK_TIME:
+            self.tick(TICK_TIME)
+            self.deltaAcc -= TICK_TIME
+
+        self.draw()
+
     def bigCenteredText(self, batch, text):
-        self.scoreFont.draw(batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
+        self.hudFont.draw(batch, text, (WIDTH - self.hudFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
 
     def checkHitsBlock(self, ball):
         block = self.blocks.checkHit(ball)
@@ -393,12 +398,12 @@ class PyGdx(ApplicationListener):
         for (_, texture) in self.textures.items():
             texture.dispose()
         self.paddle.texture.dispose()
-        self.dropsound.dispose()
-        self.rainmusic.dispose()
+        self.dropSound.dispose()
+        self.rainMusic.dispose()
+        self.hudFont.dispose()
 
 def main():
     LwjglApplication(PyGdx(), config)
-
 
 if __name__ == '__main__':
     main()
