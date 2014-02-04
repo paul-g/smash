@@ -25,7 +25,9 @@ config = LwjglApplicationConfiguration(
     width = WIDTH,
     height = HEIGHT)
 
-TICK_TIME = 1.0 / 30
+TPS = 30
+TICK_TIME = 1.0 / TPS
+BALL_SPEED =  200 / TPS
 
 class PowerUp(object):
     def __init__(self, lifetime):
@@ -155,8 +157,7 @@ class Paddle(object):
 class Ball(object):
     def __init__(self, texture):
         super(Ball, self).__init__()
-        self.SPEED = 3
-        self.direction = Vector2(-1, 1).scl(self.SPEED)
+        self.direction = Vector2(-1, 1).scl(BALL_SPEED)
         self.position = Vector2(100, 100)
         self.defaultTexture = texture
         self.texture = texture
@@ -307,9 +308,6 @@ class PyGdx(ApplicationListener):
         return "Blocks %d, Time %.1f, Rating: %s" % (
             self.brokenBlocks, self.playTime, self.ball.getPowerUpsString())
 
-    def lose(self):
-        pass
-
     def draw(self):
         """ Do any and all drawing. """
         self.camera.update()
@@ -346,7 +344,8 @@ class PyGdx(ApplicationListener):
             if self.paddle.rectangle.x > (WIDTH - self.paddle.rectangle.width):
                 self.paddle.rectangle.x = WIDTH - self.paddle.rectangle.width
 
-            if self.ball.rectangle.y < self.paddle.rectangle.height - 5:
+            if (self.ball.rectangle.y < self.paddle.rectangle.y + self.paddle.rectangle.height
+                and not self.paddle.hits(self.ball)):
                 self.state = LOST
 
             if self.blocks.blocks.size == 0:
