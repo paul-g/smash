@@ -27,7 +27,7 @@ config = LwjglApplicationConfiguration(
 
 TPS = 30
 TICK_TIME = 1.0 / TPS
-BALL_SPEED =  200 / TPS
+BALL_SPEED = 200 # px/s
 
 class PowerUp(object):
     def __init__(self, lifetime):
@@ -157,7 +157,8 @@ class Paddle(object):
 class Ball(object):
     def __init__(self, texture):
         super(Ball, self).__init__()
-        self.direction = Vector2(-1, 1).scl(BALL_SPEED)
+        self.direction = Vector2(-1, 1).nor()
+        self.speed = BALL_SPEED
         self.position = Vector2(100, 100)
         self.defaultTexture = texture
         self.texture = texture
@@ -207,10 +208,11 @@ class Ball(object):
         for p in expiredPowerUps:
             self.removePowerUp(p)
 
-    def updateCoordinates(self, checkHitsBlock, checkHitsPaddle):
-        prevPosition = Vector2(self.position)
-
-        newPosition = prevPosition.add(self.direction)
+    def updateCoordinates(self, delta, checkHitsBlock, checkHitsPaddle):
+        # Do we bounce?
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        newPosition = Vector2(self.position).add(movement)
 
         newX = newPosition.x
         newY = newPosition.y
@@ -222,11 +224,15 @@ class Ball(object):
         elif newY > HEIGHT - radius or newY < radius:
             self.direction.y *= -1
 
-        newPosition = self.position.add(self.direction)
+        # Actually update position
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        self.position.add(movement)
 
-        self.ball.setPosition(newPosition)
-        self.rectangle.setPosition(newPosition)
+        self.ball.setPosition(self.position)
+        self.rectangle.setPosition(self.position)
 
+        # Check hits
         block = checkHitsBlock(self)
         if block:
             # Hit a block
@@ -353,6 +359,7 @@ class PyGdx(ApplicationListener):
 
             self.ball.tick(delta)
             self.ball.updateCoordinates(
+                delta,
                 checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
                 checkHitsPaddle = lambda ball: self.paddle.hits(ball))
 
