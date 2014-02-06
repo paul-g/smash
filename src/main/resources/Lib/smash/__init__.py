@@ -3,7 +3,7 @@ import random
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
-from com.badlogic.gdx import ApplicationListener, Gdx, Input
+from com.badlogic.gdx import ApplicationListener, Gdx, Input, InputProcessor
 from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 from datetime import datetime
@@ -29,8 +29,74 @@ TPS = 30
 TICK_TIME = 1.0 / TPS
 BALL_SPEED = 200 # px/s
 
+class InputSnapshot(object):
+    def __init__(self, keys, touched):
+        super(InputSnapshot, self).__init__()
+        self.keys = set(keys)
+        self.touched = touched and Vector3(touched)
+
+    def isLeftPressed(self):
+        return (Input.Keys.LEFT in self.keys)
+
+    def isRightPressed(self):
+        return (Input.Keys.RIGHT in self.keys)
+
+class SmashInput(InputProcessor):
+    """Input achieves two things:
+
+    - the callbacks here are called by Gdx itself, so we know we won't
+      miss events by polling at the wrong times, and
+
+    - since we have all inputs received up to any point in time, we
+      can snapshot the input state at every tick to create a full
+      history of input; so, we could save replays, reverse time, etc.
+
+    """
+    def __init__(self):
+        super(SmashInput, self).__init__()
+        self.keys = set()
+        self.touched = None
+        self.isTouching = False
+
+    def keyDown(self, keyCode):
+        self.keys.add(keyCode)
+        return True
+
+    def keyTyped(self, ch):
+        return False
+
+    def keyUp(self, keyCode):
+        self.keys.discard(keyCode)
+        return False
+
+    def mouseMoved(self, screenX, screenY):
+        return False
+
+    def scrolled(self, amount):
+        return False
+
+    def touchDown(self, screenX, screenY, pointer, button):
+        self.isTouching = True
+        self.touched = Vector3(screenX, screenY, 0)
+        return True
+
+    def touchDragged(self, screenX, screenY, pointer):
+        self.touched = Vector3(screenX, screenY, 0)
+        return False
+
+    def touchUp(self, screenX, screenY, pointer, button):
+        self.isTouching = False
+        return True
+
+    def tick(self, delta):
+        snapshot = InputSnapshot(self.keys, self.touched)
+        if not self.isTouching:
+            self.touched = None
+        return snapshot
+
 class PowerUp(object):
     def __init__(self, lifetime):
+        super(PowerUp, self).__init__()
         self.lifetime = lifetime
         self.timeRemaining = 0
 
@@ -273,8 +339,12 @@ class PyGdx(ApplicationListener):
         self.blocks = None
         self.background = None
         self.state = None
+        self.input = None
 
     def create(self):
+        self.input = SmashInput()
+        Gdx.input.setInputProcessor(self.input)
+
         self.camera = OrthographicCamera()
         self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
@@ -330,19 +400,17 @@ class PyGdx(ApplicationListener):
             self.bigCenteredText(self.batch, "A winner is you!")
         self.batch.end()
 
-    def tick(self, delta):
+    def tick(self, delta, input):
         """ Another 1/60 seconds have passed.  Update state. """
         if self.state == PLAYING:
             self.playTime += delta
 
-            if Gdx.input.isTouched():
-                touchpos = Vector3()
-                touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
-                self.camera.unproject(touchpos)
-                self.paddle.rectangle.x = touchpos.x - (64 / 2)
-            if Gdx.input.isKeyPressed(Input.Keys.LEFT):
+            if input.touched:
+                self.camera.unproject(input.touched)
+                self.paddle.rectangle.x = input.touched.x - (64 / 2)
+            if input.isLeftPressed():
                 self.paddle.rectangle.x -= 200 * delta
-            if Gdx.input.isKeyPressed(Input.Keys.RIGHT):
+            if input.isRightPressed():
                 self.paddle.rectangle.x += 200 * delta
 
             if self.paddle.rectangle.x < 0:
@@ -369,7 +437,8 @@ class PyGdx(ApplicationListener):
 
         self.deltaAcc += Gdx.graphics.getDeltaTime()
         while self.deltaAcc > TICK_TIME:
-            self.tick(TICK_TIME)
+            input = self.input.tick(TICK_TIME)
+            self.tick(TICK_TIME, input)
             self.deltaAcc -= TICK_TIME
 
         self.draw()
