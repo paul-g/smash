@@ -331,8 +331,9 @@ class Ball(object):
         else:
             return "Lame"
 
-class PyGdx(ApplicationListener):
+class SmashGame(ApplicationListener):
     def __init__(self):
+        super(SmashGame, self).__init__()
         self.camera = None
         self.batch = None
         self.textures = None
@@ -480,7 +481,7 @@ class PyGdx(ApplicationListener):
         self.hudFont.dispose()
 
 def main():
-    LwjglApplication(PyGdx(), config)
+    LwjglApplication(SmashGame(), config)
 
 if __name__ == '__main__':
     main()
