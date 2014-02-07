@@ -88,8 +88,11 @@ class SmashInput(InputProcessor):
         self.isTouching = False
         return True
 
-    def tick(self, delta):
-        snapshot = InputSnapshot(self.keys, self.touched)
+    def tick(self, delta, camera):
+        touched = self.touched and Vector3(self.touched)
+        if touched:
+            camera.unproject(touched)
+        snapshot = InputSnapshot(self.keys, touched)
         if not self.isTouching:
             self.touched = None
         return snapshot
@@ -406,7 +409,6 @@ class PyGdx(ApplicationListener):
             self.playTime += delta
 
             if input.touched:
-                self.camera.unproject(input.touched)
                 self.paddle.rectangle.x = input.touched.x - (64 / 2)
             if input.isLeftPressed():
                 self.paddle.rectangle.x -= 200 * delta
@@ -437,7 +439,7 @@ class PyGdx(ApplicationListener):
 
         self.deltaAcc += Gdx.graphics.getDeltaTime()
         while self.deltaAcc > TICK_TIME:
-            input = self.input.tick(TICK_TIME)
+            input = self.input.tick(TICK_TIME, self.camera)
             self.tick(TICK_TIME, input)
             self.deltaAcc -= TICK_TIME
 
