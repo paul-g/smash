@@ -20,38 +20,41 @@ PAUSED = 2
 LOST = 3
 WON = 4
 
-config = LwjglApplicationConfiguration(
-    title = "Smash!",
-    width = WIDTH,
-    height = HEIGHT)
+CONFIG = LwjglApplicationConfiguration(
+    title="Smash!",
+    vSyncEnabled=True,
+    fullscreen=True)
 
 
 class PowerUp(object):
+
+    """Base class for all powerups."""
     def __init__(self, lifetime):
         self.lifetime = lifetime
-        self.timeRemaining = 0
+        self.time_remaining = 0
 
-    def applyEffect(self, ball):
+    def apply_effect(self, ball):
         raise NotImplementedError()
 
     def removeEffect(self, ball):
         raise NotImplementedError()
 
     def update(self):
-        self.timeRemaining -= 1
+        self.time_remaining -= 1
 
     def resetRemaining(self):
-        self.timeRemaining = self.lifetime
+        self.time_remaining = self.lifetime
 
     def hasExpired(self):
-        return self.timeRemaining <= 0
+        return self.time_remaining <= 0
 
 class FireBall(PowerUp):
+    """A fireball powerup makes a ball go through blocks."""
     def __init__(self, lifetime):
         super(FireBall, self).__init__(lifetime)
         self.texture = Texture("assets/fire_ball.png")
 
-    def applyEffect(self, ball):
+    def apply_effect(self, ball):
         ball.blockDirectionChange = 1
         ball.setTexture(self.texture)
 
@@ -60,7 +63,7 @@ class FireBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Fireball %s s" % (self.timeRemaining, )
+        return "Fireball %s s" % (self.time_remaining, )
 
 
 class LargeBall(PowerUp):
@@ -68,7 +71,7 @@ class LargeBall(PowerUp):
         super(LargeBall, self).__init__(lifetime)
         self.texture = Texture("assets/red_ball_32_32.png")
 
-    def applyEffect(self, ball):
+    def apply_effect(self, ball):
         ball.setRadius(16)
         ball.setTexture(self.texture)
 
@@ -77,7 +80,7 @@ class LargeBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Largeball %s s" % (self.timeRemaining, )
+        return "Largeball %s s" % (self.time_remaining, )
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -243,7 +246,7 @@ class Ball(object):
 
     def addPowerUp(self, powerUp):
         self.powerUps.add(powerUp)
-        powerUp.applyEffect(self)
+        powerUp.apply_effect(self)
 
     def removePowerUp(self, powerUp):
         # how do I do this?
@@ -264,6 +267,9 @@ class PyGdx(ApplicationListener):
         self.blocks = None
         self.background = None
         self.state = None
+        self.ball = None
+        self.dropimg = None
+        self.score_font = None
 
     def create(self):
         self.camera = OrthographicCamera()
@@ -279,7 +285,7 @@ class PyGdx(ApplicationListener):
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
-        self.scoreFont = BitmapFont()
+        self.score_font = BitmapFont()
         self.powerUps = {
             "r": (FireBall(2), 0.1),
             "b": (None, 1),
@@ -330,7 +336,7 @@ class PyGdx(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.draw(self.batch)
-        self.scoreFont.draw(self.batch, self.score, 20, 20)
+        self.score_font.draw(self.batch, self.score, 20, 20)
         if self.state == LOST:
             self.bigCenteredText(self.batch, "You are lose!")
         elif self.state == WON:
@@ -360,20 +366,23 @@ class PyGdx(ApplicationListener):
                 self.state = WON
 
             self.ball.updateCoordinates(
-                checkHitsBlock = lambda ball: self.checkHitsBlock(ball),
-                checkHitsPaddle = lambda ball: self.paddle.hits(ball))
+                checkHitsBlock=self.checkHitsBlock,
+                checkHitsPaddle=self.paddle.hits)
 
     def bigCenteredText(self, batch, text):
-        self.scoreFont.draw(batch, text, (WIDTH - self.scoreFont.getBounds (text).width) / 2, HEIGHT / 3 * 2)
+        self.score_font.draw(
+            batch, text,
+            (WIDTH - self.score_font.getBounds(text).width) / 2,
+            HEIGHT / 3 * 2)
 
     def checkHitsBlock(self, ball):
         block = self.blocks.checkHit(ball)
         if block:
             self.brokenBlocks += 1
-            powerUp = block.getPowerUp()
-            if powerUp:
-                ball.addPowerUp(powerUp)
-                powerUp.resetRemaining()
+            power_up = block.getPowerUp()
+            if power_up:
+                ball.addPowerUp(power_up)
+                power_up.resetRemaining()
         return block
 
     def updatePowerUps(self):
@@ -389,6 +398,7 @@ class PyGdx(ApplicationListener):
         pass
 
     def dispose(self):
+        """"Handle dispose event"""
         self.batch.dispose()
         for (_, texture) in self.textures.items():
             texture.dispose()
@@ -397,8 +407,11 @@ class PyGdx(ApplicationListener):
         self.rainmusic.dispose()
 
 def main():
-    LwjglApplication(PyGdx(), config)
+    """Main function"""
+    LwjglApplication(PyGdx(), CONFIG)
 
 
 if __name__ == '__main__':
     main()
+
+
