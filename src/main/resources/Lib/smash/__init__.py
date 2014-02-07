@@ -3,7 +3,7 @@ import random
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
-from com.badlogic.gdx import ApplicationListener, Gdx, Input
+from com.badlogic.gdx import ApplicationListener, Gdx, Input, InputProcessor
 from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 from datetime import datetime
@@ -22,14 +22,85 @@ WON = 4
 
 CONFIG = LwjglApplicationConfiguration(
     title="Smash!",
-    vSyncEnabled=True,
-    fullscreen=True)
+    width=WIDTH,
+    height= HEIGHT,
+    vSyncEnabled=True)
 
+
+TPS = 30
+TICK_TIME = 1.0 / TPS
+BALL_SPEED = 200 # px/s
+
+class InputSnapshot(object):
+    def __init__(self, keys, touched):
+        super(InputSnapshot, self).__init__()
+        self.keys = set(keys)
+        self.touched = touched and Vector3(touched)
+
+    def isLeftPressed(self):
+        return (Input.Keys.LEFT in self.keys)
+
+    def isRightPressed(self):
+        return (Input.Keys.RIGHT in self.keys)
+
+class SmashInput(InputProcessor):
+    """Input achieves two things:
+
+    - the callbacks here are called by Gdx itself, so we know we won't
+      miss events by polling at the wrong times, and
+
+    - since we have all inputs received up to any point in time, we
+      can snapshot the input state at every tick to create a full
+      history of input; so, we could save replays, reverse time, etc.
+
+    """
+    def __init__(self):
+        super(SmashInput, self).__init__()
+        self.keys = set()
+        self.touched = None
+        self.isTouching = False
+
+    def keyDown(self, keyCode):
+        self.keys.add(keyCode)
+        return True
+
+    def keyTyped(self, ch):
+        return False
+
+    def keyUp(self, keyCode):
+        self.keys.discard(keyCode)
+        return False
+
+    def mouseMoved(self, screenX, screenY):
+        return False
+
+    def scrolled(self, amount):
+        return False
+
+    def touchDown(self, screenX, screenY, pointer, button):
+        self.isTouching = True
+        self.touched = Vector3(screenX, screenY, 0)
+        return True
+
+    def touchDragged(self, screenX, screenY, pointer):
+        self.touched = Vector3(screenX, screenY, 0)
+        return False
+
+    def touchUp(self, screenX, screenY, pointer, button):
+        self.isTouching = False
+        return True
+
+    def tick(self, delta):
+        snapshot = InputSnapshot(self.keys, self.touched)
+        if not self.isTouching:
+            self.touched = None
+        return snapshot
 
 class PowerUp(object):
 
     """Base class for all powerups."""
     def __init__(self, lifetime):
+        super(PowerUp, self).__init__()
         self.lifetime = lifetime
         self.time_remaining = 0
 
@@ -39,14 +110,15 @@ class PowerUp(object):
     def removeEffect(self, ball):
         raise NotImplementedError()
 
-    def update(self):
-        self.time_remaining -= 1
+    def tick(self, delta):
+        self.time_remaining -= delta
 
     def resetRemaining(self):
         self.time_remaining = self.lifetime
 
     def hasExpired(self):
         return self.time_remaining <= 0
+
 
 class FireBall(PowerUp):
     """A fireball powerup makes a ball go through blocks."""
@@ -63,7 +135,7 @@ class FireBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Fireball %s s" % (self.time_remaining, )
+        return "Fireball(%.1f)" % (self.time_remaining, )
 
 
 class LargeBall(PowerUp):
@@ -80,7 +152,8 @@ class LargeBall(PowerUp):
         ball.resetTexture()
 
     def __str__(self):
-        return "Largeball %s s" % (self.time_remaining, )
+        return "Largeball(%.1f)" % (self.time_remaining, )
+
 
 class Block(object):
     def __init__(self, x, y, texture, hitSound, powerUp = None):
@@ -124,7 +197,6 @@ class Blocks(object):
     def getPowerUp(self, powerUp):
         return powerUp[0] if random.random() < powerUp[1] else None
 
-
     def draw(self, batch):
         for block in self.blocks:
             block.draw(batch)
@@ -157,8 +229,8 @@ class Paddle(object):
 class Ball(object):
     def __init__(self, texture):
         super(Ball, self).__init__()
-        self.SPEED = 3
-        self.direction = Vector2(-1, 1).scl(self.SPEED)
+        self.direction = Vector2(-1, 1).nor()
+        self.speed = BALL_SPEED
         self.position = Vector2(100, 100)
         self.defaultTexture = texture
         self.texture = texture
@@ -201,18 +273,18 @@ class Ball(object):
     def resetBlockDirectionChange(self):
         self.blockDirectionChange = -1
 
-    def updatePowerUps(self):
-        map(lambda powerUp: powerUp.update(), self.powerUps)
-        expiredPowerUps = filter(
-            lambda powerUp: powerUp.hasExpired(),
-            self.powerUps)
+    def tick(self, delta):
+        for powerUp in self.powerUps:
+            powerUp.tick(delta)
+        expiredPowerUps = [powerUp for powerUp in self.powerUps if  powerUp.hasExpired()]
         for p in expiredPowerUps:
             self.removePowerUp(p)
 
-    def updateCoordinates(self, checkHitsBlock, checkHitsPaddle):
-        prevPosition = Vector2(self.position)
-
-        newPosition = prevPosition.add(self.direction)
+    def updateCoordinates(self, delta, checkHitsBlock, checkHitsPaddle):
+        # Do we bounce?
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        newPosition = Vector2(self.position).add(movement)
 
         newX = newPosition.x
         newY = newPosition.y
@@ -224,11 +296,15 @@ class Ball(object):
         elif newY > HEIGHT - radius or newY < radius:
             self.direction.y *= -1
 
-        newPosition = self.position.add(self.direction)
+        # Actually update position
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        self.position.add(movement)
 
-        self.ball.setPosition(newPosition)
-        self.rectangle.setPosition(newPosition)
+        self.ball.setPosition(self.position)
+        self.rectangle.setPosition(self.position)
 
+        # Check hits
         block = checkHitsBlock(self)
         if block:
             # Hit a block
@@ -249,12 +325,14 @@ class Ball(object):
         powerUp.apply_effect(self)
 
     def removePowerUp(self, powerUp):
-        # how do I do this?
         powerUp.removeEffect(self)
         self.powerUps.remove(powerUp)
 
     def getPowerUpsString(self):
-        return [str(p) for p in self.powerUps]
+        if len(self.powerUps) > 0:
+            return " ".join([str(powerUp) for powerUp in self.powerUps])
+        else:
+            return "Lame"
 
 class PyGdx(ApplicationListener):
     def __init__(self):
@@ -262,16 +340,20 @@ class PyGdx(ApplicationListener):
         self.batch = None
         self.textures = None
         self.paddle = None
-        self.dropsound = None
-        self.rainmusic = None
+        self.dropSound = None
+        self.rainMusic = None
         self.blocks = None
         self.background = None
         self.state = None
         self.ball = None
         self.dropimg = None
-        self.score_font = None
+        self.hudFont = None
+        self.input = None
 
     def create(self):
+        self.input = SmashInput()
+        Gdx.input.setInputProcessor(self.input)
+
         self.camera = OrthographicCamera()
         self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
@@ -285,7 +367,7 @@ class PyGdx(ApplicationListener):
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
-        self.score_font = BitmapFont()
+        self.hudFont = BitmapFont()
         self.powerUps = {
             "r": (FireBall(2), 0.1),
             "b": (None, 1),
@@ -293,42 +375,26 @@ class PyGdx(ApplicationListener):
             }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
-        self.dropsound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
-        self.rainmusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
+        self.dropSound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
+        self.rainMusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
         self.blocks = Blocks(blockLayout = blockLayout,
                              textures = self.textures,
-                             hitSound = self.dropsound,
+                             hitSound = self.dropSound,
                              powerUps = self.powerUps)
 
         self.brokenBlocks = 0
-        self.gameTime = 0
         self.deltaAcc = 0
-        self.updateScore()
+        self.playTime = 0
 
-    def updateScore(self):
-        self.score = "Blocks {}, Time {}, PowerUps: {}".format(
-            self.brokenBlocks, self.gameTime, self.ball.getPowerUpsString())
+    def score(self):
+        return "Blocks %d, Time %.1f, Rating: %s" % (
+            self.brokenBlocks, self.playTime, self.ball.getPowerUpsString())
 
-    def lose(self):
-        pass
-
-    def updateTimer(self):
-        self.deltaAcc += Gdx.graphics.getDeltaTime()
-        if self.deltaAcc >= 1:
-            self.updatePowerUps()
-            self.gameTime += 1
-            self.deltaAcc = 0
-
-    def render(self):
-        Gdx.gl.glClearColor(0, 0, 0, 0)
-        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
-
-        self.updateTimer()
-        self.updateScore()
-
+    def draw(self):
+        """ Do any and all drawing. """
         self.camera.update()
         self.batch.setProjectionMatrix(self.camera.combined)
         self.batch.begin()
@@ -336,43 +402,60 @@ class PyGdx(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.draw(self.batch)
-        self.score_font.draw(self.batch, self.score, 20, 20)
+        self.hudFont.draw(self.batch, self.score(), 20, 20)
         if self.state == LOST:
             self.bigCenteredText(self.batch, "You are lose!")
         elif self.state == WON:
             self.bigCenteredText(self.batch, "A winner is you!")
         self.batch.end()
 
+    def tick(self, delta, input):
+        """ Another 1/60 seconds have passed.  Update state. """
         if self.state == PLAYING:
-            if Gdx.input.isTouched():
-                touchpos = Vector3()
-                touchpos.set(Gdx.input.getX(), Gdx.input.getY(), 0)
-                self.camera.unproject(touchpos)
-                self.paddle.rectangle.x = touchpos.x - (64 / 2)
-            if Gdx.input.isKeyPressed(Input.Keys.LEFT):
-                self.paddle.rectangle.x -= 200 * Gdx.graphics.getDeltaTime()
-            if Gdx.input.isKeyPressed(Input.Keys.RIGHT):
-                self.paddle.rectangle.x += 200 * Gdx.graphics.getDeltaTime()
+            self.playTime += delta
+
+            if input.touched:
+                self.camera.unproject(input.touched)
+                self.paddle.rectangle.x = input.touched.x - (64 / 2)
+            if input.isLeftPressed():
+                self.paddle.rectangle.x -= 200 * delta
+            if input.isRightPressed():
+                self.paddle.rectangle.x += 200 * delta
 
             if self.paddle.rectangle.x < 0:
                 self.paddle.rectangle.x = 0
             if self.paddle.rectangle.x > (WIDTH - self.paddle.rectangle.width):
                 self.paddle.rectangle.x = WIDTH - self.paddle.rectangle.width
 
-            if self.ball.rectangle.y < self.paddle.rectangle.height - 5:
+            if (self.ball.rectangle.y < self.paddle.rectangle.y + self.paddle.rectangle.height
+                and not self.paddle.hits(self.ball)):
                 self.state = LOST
 
             if self.blocks.blocks.size == 0:
                 self.state = WON
 
+            self.ball.tick(delta)
             self.ball.updateCoordinates(
+                delta,
                 checkHitsBlock=self.checkHitsBlock,
                 checkHitsPaddle=self.paddle.hits)
 
+    def render(self):
+        Gdx.gl.glClearColor(0, 0, 0, 0)
+        Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
+
+        self.deltaAcc += Gdx.graphics.getDeltaTime()
+        while self.deltaAcc > TICK_TIME:
+            input = self.input.tick(TICK_TIME)
+            self.tick(TICK_TIME, input)
+            self.deltaAcc -= TICK_TIME
+
+        self.draw()
+
     def bigCenteredText(self, batch, text):
-        self.score_font.draw(
+        self.hudFont.draw(
             batch, text,
-            (WIDTH - self.score_font.getBounds(text).width) / 2,
+            (WIDTH - self.hudFont.getBounds(text).width) / 2,
             HEIGHT / 3 * 2)
 
     def checkHitsBlock(self, ball):
@@ -403,13 +486,13 @@ class PyGdx(ApplicationListener):
         for (_, texture) in self.textures.items():
             texture.dispose()
         self.paddle.texture.dispose()
-        self.dropsound.dispose()
-        self.rainmusic.dispose()
+        self.dropSound.dispose()
+        self.rainMusic.dispose()
+        self.hudFont.dispose()
 
 def main():
     """Main function"""
     LwjglApplication(PyGdx(), CONFIG)
-
 
 if __name__ == '__main__':
     main()
