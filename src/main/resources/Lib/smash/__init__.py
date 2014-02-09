@@ -140,29 +140,6 @@ class Blocks(object):
                 return block
 
 
-class Paddle(object):
-    def __init__(self, texture):
-        super(Paddle, self).__init__()
-        self.texture = texture
-        paddle_width = 100
-        paddle_height = 50
-        self.rectangle = Rectangle((WIDTH - paddle_width) / 2, 0,
-                                   paddle_width, paddle_height)
-
-    def draw(self, batch):
-        batch.draw(self.texture, self.rectangle.x,
-                   self.rectangle.y, self.rectangle.width,
-                   self.rectangle.height)
-
-    def hits(self, ball):
-        return self.rectangle.overlaps(ball.rectangle)
-
-    def move(self, delta, direction=1):
-        """direction is 1 for right, -1 for left."""
-        self.rectangle.x += direction * 200 * delta
-
-    def get_speed(self):
-        pass
 
 class Ball(object):
     def __init__(self, texture):
@@ -317,7 +294,11 @@ class SmashGame(ApplicationListener):
             "g": (LargeBall(2, Texture("assets/red_ball_32_32.png")), 0.9)
             }
 
-        self.paddle = Paddle(Texture("assets/paddle.png"))
+        paddle_width = 100
+        paddle_height = 50
+        self.paddle = Paddle(Texture("assets/paddle.png"),
+                             Rectangle((WIDTH - paddle_width) / 2, 0,
+                                       paddle_width, paddle_height))
         self.drop_sound = Gdx.audio.newSound(
             Gdx.files.internal("assets/drop.wav"))
         self.rain_music = Gdx.audio.newSound(
