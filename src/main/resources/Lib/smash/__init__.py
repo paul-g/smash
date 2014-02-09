@@ -1,7 +1,8 @@
 """Smash is a simple port of the legendary Breakout to libgdx."""
 import random
 
-from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
+from com.badlogic.gdx.backends.lwjgl import LwjglApplication
+from com.badlogic.gdx.backends.lwjgl import LwjglApplicationConfiguration
 from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input, InputProcessor
@@ -24,7 +25,7 @@ WON = 4
 CONFIG = LwjglApplicationConfiguration(
     title="Smash!",
     width=WIDTH,
-    height= HEIGHT,
+    height=HEIGHT,
     vSyncEnabled=True)
 
 
@@ -38,11 +39,11 @@ class InputSnapshot(object):
         self.keys = set(keys)
         self.touched = touched and Vector3(touched)
 
-    def isLeftPressed(self):
-        return (Input.Keys.LEFT in self.keys)
+    def is_left_pressed(self):
+        return Input.Keys.LEFT in self.keys
 
-    def isRightPressed(self):
-        return (Input.Keys.RIGHT in self.keys)
+    def is_right_pressed(self):
+        return Input.Keys.RIGHT in self.keys
 
 class SmashInput(InputProcessor):
     """Input achieves two things:
@@ -59,7 +60,7 @@ class SmashInput(InputProcessor):
         super(SmashInput, self).__init__()
         self.keys = set()
         self.touched = None
-        self.isTouching = False
+        self.is_touching = False
 
     def keyDown(self, keyCode):
         self.keys.add(keyCode)
@@ -79,7 +80,7 @@ class SmashInput(InputProcessor):
         return False
 
     def touchDown(self, screenX, screenY, pointer, button):
-        self.isTouching = True
+        self.is_touching = True
         self.touched = Vector3(screenX, screenY, 0)
         return True
 
@@ -88,7 +89,7 @@ class SmashInput(InputProcessor):
         return False
 
     def touchUp(self, screenX, screenY, pointer, button):
-        self.isTouching = False
+        self.is_touching = False
         return True
 
     def tick(self, delta, camera):
@@ -96,7 +97,7 @@ class SmashInput(InputProcessor):
         if touched:
             camera.unproject(touched)
         snapshot = InputSnapshot(self.keys, touched)
-        if not self.isTouching:
+        if not self.is_touching:
             self.touched = None
         return snapshot
 
@@ -111,16 +112,16 @@ class PowerUp(object):
     def apply_effect(self, ball):
         raise NotImplementedError()
 
-    def removeEffect(self, ball):
+    def remove_effect(self, ball):
         raise NotImplementedError()
 
     def tick(self, delta):
         self.time_remaining -= delta
 
-    def resetRemaining(self):
+    def reset_remaining(self):
         self.time_remaining = self.lifetime
 
-    def hasExpired(self):
+    def has_expired(self):
         return self.time_remaining <= 0
 
 
@@ -132,11 +133,11 @@ class FireBall(PowerUp):
 
     def apply_effect(self, ball):
         ball.blockDirectionChange = 1
-        ball.setTexture(self.texture)
+        ball.set_texture(self.texture)
 
-    def removeEffect(self, ball):
-        ball.resetBlockDirectionChange()
-        ball.resetTexture()
+    def remove_effect(self, ball):
+        ball.reset_block_direction_change()
+        ball.reset_texture()
 
     def __str__(self):
         return "Fireball(%.1f)" % (self.time_remaining, )
@@ -148,40 +149,42 @@ class LargeBall(PowerUp):
         self.texture = Texture("assets/red_ball_32_32.png")
 
     def apply_effect(self, ball):
-        ball.setRadius(16)
-        ball.setTexture(self.texture)
+        ball.set_radius(16)
+        ball.set_texture(self.texture)
 
-    def removeEffect(self, ball):
-        ball.resetRadius()
-        ball.resetTexture()
+    def remove_effect(self, ball):
+        ball.reset_radius()
+        ball.reset_texture()
 
     def __str__(self):
         return "Largeball(%.1f)" % (self.time_remaining, )
 
 
 class Block(object):
-    def __init__(self, x, y, texture, hitSound, powerUp = None):
+    def __init__(self, x, y, texture, hit_sound, power_up=None):
         super(Block, self).__init__()
         self.rectangle = Rectangle(x, y, BLOCK_DIM, BLOCK_DIM)
         self.texture = texture
-        self.hitSound = hitSound
-        self.powerUp = powerUp
+        self.hit_sound = hit_sound
+        self.power_up = power_up
 
     def hits(self, ball):
         return self.rectangle.overlaps(ball.rectangle)
 
     def draw(self, batch):
-        batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
+        batch.draw(self.texture, self.rectangle.x,
+                   self.rectangle.y, self.rectangle.width,
+                   self.rectangle.height)
 
     def hit(self):
-        self.hitSound.play()
+        self.hit_sound.play()
 
     def getPowerUp(self):
-        return self.powerUp
+        return self.power_up
 
 
 class Blocks(object):
-    def __init__(self, blockLayout, textures, hitSound, powerUps):
+    def __init__(self, blockLayout, textures, hit_sound, power_ups):
         super(Blocks, self).__init__()
         self.blocks = Array()
         # Center horizontally
@@ -194,12 +197,12 @@ class Blocks(object):
                 if cell != ' ':
                     x = offsetX + i * (BLOCK_DIM + 1)
                     y = offsetY + j * (BLOCK_DIM + 1)
-                    powerUp = self.getPowerUp(powerUps[cell])
+                    power_up = self.getPowerUp(power_ups[cell])
                     self.blocks.add(
-                        Block(x, y, textures[cell], hitSound, powerUp))
+                        Block(x, y, textures[cell], hit_sound, power_up))
 
-    def getPowerUp(self, powerUp):
-        return powerUp[0] if random.random() < powerUp[1] else None
+    def getPowerUp(self, power_up):
+        return power_up[0] if random.random() < power_up[1] else None
 
     def draw(self, batch):
         for block in self.blocks:
@@ -221,10 +224,13 @@ class Paddle(object):
         self.texture = texture
         paddleWidth = 100
         paddleHeight = 50
-        self.rectangle = Rectangle((WIDTH - paddleWidth) / 2, 0, paddleWidth, paddleHeight)
+        self.rectangle = Rectangle((WIDTH - paddleWidth) / 2, 0,
+                                   paddleWidth, paddleHeight)
 
     def draw(self, batch):
-        batch.draw(self.texture, self.rectangle.x, self.rectangle.y, self.rectangle.width, self.rectangle.height)
+        batch.draw(self.texture, self.rectangle.x,
+                   self.rectangle.y, self.rectangle.width,
+                   self.rectangle.height)
 
     def hits(self, ball):
         return self.rectangle.overlaps(ball.rectangle)
@@ -242,20 +248,20 @@ class Ball(object):
         self.direction = Vector2(-1, 1).nor()
         self.speed = BALL_SPEED
         self.position = Vector2(100, 100)
-        self.defaultTexture = texture
+        self.default_texture = texture
         self.texture = texture
-        self.powerUps = set()
+        self.power_ups = set()
 
-        self.defaultRadius = 8
+        self.default_radius = 8
 
         self.ball = Circle()
         self.ball.setPosition(self.position)
-        self.ball.radius = self.defaultRadius
+        self.ball.radius = self.default_radius
 
         self.rectangle = Rectangle()
         self.setRectanglePosition()
 
-        self.blockDirectionChange = -1
+        self.block_direction_change = -1
 
     def setRectanglePosition(self):
         self.rectangle.setPosition(self.position.sub(
@@ -264,46 +270,46 @@ class Ball(object):
         self.rectangle.height = 2 * self.ball.radius
 
     def draw(self, batch):
-        batch.draw(self.texture, self.ball.x - self.ball.radius, self.ball.y - self.ball.radius)
+        batch.draw(self.texture, self.ball.x - self.ball.radius,
+                   self.ball.y - self.ball.radius)
 
-    def setRadius(self, radius):
+    def set_radius(self, radius):
         self.ball.radius = radius
         self.setRectanglePosition()
 
-    def resetRadius(self):
-        self.ball.radius = self.defaultRadius
+    def reset_radius(self):
+        self.ball.radius = self.default_radius
         self.setRectanglePosition()
 
-    def setTexture(self, texture):
+    def set_texture(self, texture):
         self.texture = texture
 
-    def resetTexture(self):
-        self.texture = self.defaultTexture
+    def reset_texture(self):
+        self.texture = self.default_texture
 
-    def resetBlockDirectionChange(self):
-        self.blockDirectionChange = -1
+    def reset_block_direction_change(self):
+        self.block_direction_change = -1
 
     def tick(self, delta):
-        for powerUp in self.powerUps:
-            powerUp.tick(delta)
-        expiredPowerUps = [powerUp for powerUp in self.powerUps if  powerUp.hasExpired()]
-        for p in expiredPowerUps:
-            self.removePowerUp(p)
+        for power_up in self.power_ups:
+            power_up.tick(delta)
+        expired_power_ups = [p for p in self.power_ups if  p.has_expired()]
+        map(self.remove_power_up, expired_power_ups)
 
-    def updateCoordinates(self, delta, checkHitsBlock, checkHitsPaddle):
+    def update_coordinates(self, delta, check_hits_block, check_hits_paddle):
         # Do we bounce?
         movement = Vector2(self.direction)
         movement.scl(self.speed * delta, self.speed * delta)
-        newPosition = Vector2(self.position).add(movement)
+        new_position = Vector2(self.position).add(movement)
 
-        newX = newPosition.x
-        newY = newPosition.y
+        new_x = new_position.x
+        new_y = new_position.y
         radius = self.ball.radius
 
-        if newX < radius or newX > WIDTH - radius:
+        if new_x < radius or new_x > WIDTH - radius:
             # left or right wall collision
             self.direction.x *= -1
-        elif newY > HEIGHT - radius or newY < radius:
+        elif new_y > HEIGHT - radius or new_y < radius:
             self.direction.y *= -1
 
         # Actually update position
@@ -315,32 +321,32 @@ class Ball(object):
         self.rectangle.setPosition(self.position)
 
         # Check hits
-        block = checkHitsBlock(self)
+        block = check_hits_block(self)
         if block:
             # Hit a block
-            blockBottom = block.rectangle.getY()
-            blockTop = blockBottom + block.rectangle.height
-            ballTop = self.position.y + self.ball.radius
-            ballBottom = self.position.y - self.ball.radius
-            if blockBottom >= ballTop or blockTop <= ballBottom:
-                self.direction.y *= self.blockDirectionChange
+            block_bottom = block.rectangle.getY()
+            block_top = block_bottom + block.rectangle.height
+            ball_top = self.position.y + self.ball.radius
+            ball_bottom = self.position.y - self.ball.radius
+            if block_bottom >= ball_top or block_top <= ball_bottom:
+                self.direction.y *= self.block_direction_change
             else:
-                self.direction.x *= self.blockDirectionChange
+                self.direction.x *= self.block_direction_change
 
-        if checkHitsPaddle(self):
+        if check_hits_paddle(self):
             self.direction.y *= -1
 
-    def addPowerUp(self, powerUp):
-        self.powerUps.add(powerUp)
-        powerUp.apply_effect(self)
+    def add_power_up(self, power_up):
+        self.power_ups.add(power_up)
+        power_up.apply_effect(self)
 
-    def removePowerUp(self, powerUp):
-        powerUp.removeEffect(self)
-        self.powerUps.remove(powerUp)
+    def remove_power_up(self, power_up):
+        power_up.remove_effect(self)
+        self.power_ups.remove(power_up)
 
-    def getPowerUpsString(self):
-        if len(self.powerUps) > 0:
-            return " ".join([str(powerUp) for powerUp in self.powerUps])
+    def get_power_ups_string(self):
+        if len(self.power_ups) > 0:
+            return " ".join([str(power_up) for power_up in self.power_ups])
         else:
             return "Lame"
 
@@ -351,15 +357,19 @@ class SmashGame(ApplicationListener):
         self.batch = None
         self.textures = None
         self.paddle = None
-        self.dropSound = None
-        self.rainMusic = None
+        self.drop_sound = None
+        self.rain_music = None
         self.blocks = None
         self.background = None
         self.state = None
         self.ball = None
         self.dropimg = None
-        self.hudFont = None
+        self.hud_font = None
         self.input = None
+        self.power_ups = None
+        self.broken_blocks = 0
+        self.delta_acc = 0
+        self.play_time = 0
 
     def create(self):
         self.input = SmashInput()
@@ -378,31 +388,34 @@ class SmashGame(ApplicationListener):
             "b": Texture("assets/blue_rectangle.png"),
             "g": Texture("assets/green_rectangle.png"),
         }
-        self.hudFont = BitmapFont()
-        self.powerUps = {
-            "r": (FireBall(2), 0.1),
+        self.hud_font = BitmapFont()
+        self.power_ups = {
+            "r": (FireBall(2), 0.9),
             "b": (None, 1),
-            "g": (LargeBall(2), 0.1)
+            "g": (LargeBall(2), 0.9)
             }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
-        self.dropSound = Gdx.audio.newSound(Gdx.files.internal("assets/drop.wav"))
-        self.rainMusic = Gdx.audio.newSound(Gdx.files.internal("assets/rain.mp3"))
+        self.drop_sound = Gdx.audio.newSound(
+            Gdx.files.internal("assets/drop.wav"))
+        self.rain_music = Gdx.audio.newSound(
+            Gdx.files.internal("assets/rain.mp3"))
 
         with open("assets/checker_board.level") as f:
             blockLayout = f.read().split("\n")
-        self.blocks = Blocks(blockLayout = blockLayout,
-                             textures = self.textures,
-                             hitSound = self.dropSound,
-                             powerUps = self.powerUps)
+        self.blocks = Blocks(blockLayout=blockLayout,
+                             textures=self.textures,
+                             hit_sound=self.drop_sound,
+                             power_ups=self.power_ups)
 
-        self.brokenBlocks = 0
-        self.deltaAcc = 0
-        self.playTime = 0
+        self.broken_blocks = 0
+        self.delta_acc = 0
+        self.play_time = 0
 
     def score(self):
         return "Blocks %d, Time %.1f, Rating: %s" % (
-            self.brokenBlocks, self.playTime, self.ball.getPowerUpsString())
+            self.broken_blocks, self.play_time,
+            self.ball.get_power_ups_string())
 
     def draw(self):
         """ Do any and all drawing. """
@@ -413,31 +426,32 @@ class SmashGame(ApplicationListener):
         self.blocks.draw(self.batch)
         self.paddle.draw(self.batch)
         self.ball.draw(self.batch)
-        self.hudFont.draw(self.batch, self.score(), 20, 20)
+        self.hud_font.draw(self.batch, self.score(), 20, 20)
         if self.state == LOST:
-            self.bigCenteredText(self.batch, "You are lose!")
+            self.big_centered_text(self.batch, "You are lose!")
         elif self.state == WON:
-            self.bigCenteredText(self.batch, "A winner is you!")
+            self.big_centered_text(self.batch, "A winner is you!")
         self.batch.end()
 
     def tick(self, delta, input):
         """ Another 1/60 seconds have passed.  Update state. """
         if self.state == PLAYING:
-            self.playTime += delta
+            self.play_time += delta
 
             if input.touched:
                 self.paddle.rectangle.x = input.touched.x - (64 / 2)
-            if input.isLeftPressed():
+            if input.is_left_pressed():
                 self.paddle.move(delta, -1)
-            if input.isRightPressed():
+            if input.is_right_pressed():
                 self.paddle.move(delta)
 
-            if self.paddle.rectangle.x < 0:
+            paddle_rect = self.paddle.rectangle
+            if paddle_rect.x < 0:
                 self.paddle.rectangle.x = 0
-            if self.paddle.rectangle.x > (WIDTH - self.paddle.rectangle.width):
-                self.paddle.rectangle.x = WIDTH - self.paddle.rectangle.width
+            if paddle_rect.x > (WIDTH - paddle_rect.width):
+                self.paddle.rectangle.x = WIDTH - paddle_rect.width
 
-            if (self.ball.rectangle.y < self.paddle.rectangle.y + self.paddle.rectangle.height
+            if (self.ball.rectangle.y < paddle_rect.y + paddle_rect.height
                 and not self.paddle.hits(self.ball)):
                 self.state = LOST
 
@@ -445,37 +459,37 @@ class SmashGame(ApplicationListener):
                 self.state = WON
 
             self.ball.tick(delta)
-            self.ball.updateCoordinates(
+            self.ball.update_coordinates(
                 delta,
-                checkHitsBlock=self.checkHitsBlock,
-                checkHitsPaddle=self.paddle.hits)
+                check_hits_block=self.check_hits_block,
+                check_hits_paddle=self.paddle.hits)
 
     def render(self):
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
 
-        self.deltaAcc += Gdx.graphics.getDeltaTime()
-        while self.deltaAcc > TICK_TIME:
+        self.delta_acc += Gdx.graphics.getDeltaTime()
+        while self.delta_acc > TICK_TIME:
             input = self.input.tick(TICK_TIME, self.camera)
             self.tick(TICK_TIME, input)
-            self.deltaAcc -= TICK_TIME
+            self.delta_acc -= TICK_TIME
 
         self.draw()
 
-    def bigCenteredText(self, batch, text):
-        self.hudFont.draw(
+    def big_centered_text(self, batch, text):
+        self.hud_font.draw(
             batch, text,
-            (WIDTH - self.hudFont.getBounds(text).width) / 2,
+            (WIDTH - self.hud_font.getBounds(text).width) / 2,
             HEIGHT / 3 * 2)
 
-    def checkHitsBlock(self, ball):
+    def check_hits_block(self, ball):
         block = self.blocks.checkHit(ball)
         if block:
-            self.brokenBlocks += 1
+            self.broken_blocks += 1
             power_up = block.getPowerUp()
             if power_up:
-                ball.addPowerUp(power_up)
-                power_up.resetRemaining()
+                ball.add_power_up(power_up)
+                power_up.reset_remaining()
         return block
 
     def updatePowerUps(self):
@@ -496,9 +510,9 @@ class SmashGame(ApplicationListener):
         for (_, texture) in self.textures.items():
             texture.dispose()
         self.paddle.texture.dispose()
-        self.dropSound.dispose()
-        self.rainMusic.dispose()
-        self.hudFont.dispose()
+        self.drop_sound.dispose()
+        self.rain_music.dispose()
+        self.hud_font.dispose()
 
 def main():
     """Main function"""
