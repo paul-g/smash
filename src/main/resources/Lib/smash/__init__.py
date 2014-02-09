@@ -10,6 +10,8 @@ from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
 from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 from datetime import datetime
 
+from powerups import *
+
 BLOCK_DIM = 32
 BLOCK_ROWS = 7
 BLOCK_COLS = 20
@@ -100,64 +102,6 @@ class SmashInput(InputProcessor):
         if not self.is_touching:
             self.touched = None
         return snapshot
-
-class PowerUp(object):
-
-    """Base class for all powerups."""
-    def __init__(self, lifetime):
-        super(PowerUp, self).__init__()
-        self.lifetime = lifetime
-        self.time_remaining = 0
-
-    def apply_effect(self, ball):
-        raise NotImplementedError()
-
-    def remove_effect(self, ball):
-        raise NotImplementedError()
-
-    def tick(self, delta):
-        self.time_remaining -= delta
-
-    def reset_remaining(self):
-        self.time_remaining = self.lifetime
-
-    def has_expired(self):
-        return self.time_remaining <= 0
-
-
-class FireBall(PowerUp):
-    """A fireball powerup makes a ball go through blocks."""
-    def __init__(self, lifetime):
-        super(FireBall, self).__init__(lifetime)
-        self.texture = Texture("assets/fire_ball.png")
-
-    def apply_effect(self, ball):
-        ball.blockDirectionChange = 1
-        ball.set_texture(self.texture)
-
-    def remove_effect(self, ball):
-        ball.reset_block_direction_change()
-        ball.reset_texture()
-
-    def __str__(self):
-        return "Fireball(%.1f)" % (self.time_remaining, )
-
-
-class LargeBall(PowerUp):
-    def __init__(self, lifetime):
-        super(LargeBall, self).__init__(lifetime)
-        self.texture = Texture("assets/red_ball_32_32.png")
-
-    def apply_effect(self, ball):
-        ball.set_radius(16)
-        ball.set_texture(self.texture)
-
-    def remove_effect(self, ball):
-        ball.reset_radius()
-        ball.reset_texture()
-
-    def __str__(self):
-        return "Largeball(%.1f)" % (self.time_remaining, )
 
 
 class Block(object):
@@ -390,9 +334,9 @@ class SmashGame(ApplicationListener):
         }
         self.hud_font = BitmapFont()
         self.power_ups = {
-            "r": (FireBall(2), 0.9),
+            "r": (FireBall(2, Texture("assets/fire_ball.png")), 0.9),
             "b": (None, 1),
-            "g": (LargeBall(2), 0.9)
+            "g": (LargeBall(2, Texture("assets/red_ball_32_32.png")), 0.9)
             }
 
         self.paddle = Paddle(Texture("assets/paddle.png"))
