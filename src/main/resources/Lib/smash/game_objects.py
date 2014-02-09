@@ -1,6 +1,6 @@
 """This module contains game objects for smash."""
 
-from com.badlogic.gdx.math import Vector2, Circle, Rectangle
+from com.badlogic.gdx.math import Vector2, Rectangle
 
 class Block(object):
     """A block to smash with the ball."""
@@ -73,7 +73,13 @@ class Paddle(object):
 
 
 class Ball(object):
-    def __init__(self, texture, speed):
+    def __init__(self, texture, speed, circle):
+        """
+        circle shoud have members:
+        - x, y, radius
+        circle should implement:
+        - setPosition(Vector2)
+        """
         super(Ball, self).__init__()
         self.direction = Vector2(-1, 1).nor()
         self.speed = speed
@@ -82,7 +88,7 @@ class Ball(object):
         self.texture = texture
         self.power_ups = set()
         self.default_radius = 8
-        self.ball = Circle()
+        self.ball = circle
         self.ball.setPosition(self.position)
         self.ball.radius = self.default_radius
         self.rectangle = Rectangle()

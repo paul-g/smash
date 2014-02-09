@@ -171,7 +171,8 @@ class SmashGame(ApplicationListener):
         self.state = PLAYING
 
         self.background = Texture("assets/swahili.png")
-        self.ball = Ball(Texture("assets/red_ball_16_16.png"), BALL_SPEED)
+        self.ball = Ball(Texture("assets/red_ball_16_16.png"),
+                         BALL_SPEED, Circle())
         self.dropimg = Texture("assets/red_rectangle.png")
         self.textures = {
             "r": Texture("assets/red_rectangle.png"),
