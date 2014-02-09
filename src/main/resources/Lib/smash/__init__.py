@@ -11,6 +11,7 @@ from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
 from datetime import datetime
 
 from powerups import *
+from game_objects import *
 
 BLOCK_DIM = 32
 BLOCK_ROWS = 7
@@ -103,30 +104,6 @@ class SmashInput(InputProcessor):
             self.touched = None
         return snapshot
 
-
-class Block(object):
-    def __init__(self, x, y, texture, hit_sound, power_up=None):
-        super(Block, self).__init__()
-        self.rectangle = Rectangle(x, y, BLOCK_DIM, BLOCK_DIM)
-        self.texture = texture
-        self.hit_sound = hit_sound
-        self.power_up = power_up
-
-    def hits(self, ball):
-        return self.rectangle.overlaps(ball.rectangle)
-
-    def draw(self, batch):
-        batch.draw(self.texture, self.rectangle.x,
-                   self.rectangle.y, self.rectangle.width,
-                   self.rectangle.height)
-
-    def hit(self):
-        self.hit_sound.play()
-
-    def getPowerUp(self):
-        return self.power_up
-
-
 class Blocks(object):
     def __init__(self, blockLayout, textures, hit_sound, power_ups):
         super(Blocks, self).__init__()
@@ -143,7 +120,9 @@ class Blocks(object):
                     y = offsetY + j * (BLOCK_DIM + 1)
                     power_up = self.getPowerUp(power_ups[cell])
                     self.blocks.add(
-                        Block(x, y, textures[cell], hit_sound, power_up))
+                        Block(x, y, textures[cell], hit_sound,
+                              Rectangle(x, y, BLOCK_DIM, BLOCK_DIM),
+                              power_up))
 
     def getPowerUp(self, power_up):
         return power_up[0] if random.random() < power_up[1] else None
