@@ -1,3 +1,4 @@
+"""Smash is a simple port of the legendary Breakout to libgdx."""
 import random
 
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication, LwjglApplicationConfiguration
@@ -29,7 +30,7 @@ CONFIG = LwjglApplicationConfiguration(
 
 TPS = 30
 TICK_TIME = 1.0 / TPS
-BALL_SPEED = 200 # px/s
+BALL_SPEED = 200 # px/sn
 
 class InputSnapshot(object):
     def __init__(self, keys, touched):
@@ -225,6 +226,12 @@ class Paddle(object):
     def hits(self, ball):
         return self.rectangle.overlaps(ball.rectangle)
 
+    def move(self, delta, direction=1):
+        """direction is 1 for right, -1 for left."""
+        self.rectangle.x += direction * 200 * delta
+
+    def get_speed(self):
+        pass
 
 class Ball(object):
     def __init__(self, texture):
@@ -418,9 +425,9 @@ class PyGdx(ApplicationListener):
                 self.camera.unproject(input.touched)
                 self.paddle.rectangle.x = input.touched.x - (64 / 2)
             if input.isLeftPressed():
-                self.paddle.rectangle.x -= 200 * delta
+                self.paddle.move(delta, -1)
             if input.isRightPressed():
-                self.paddle.rectangle.x += 200 * delta
+                self.paddle.move(delta)
 
             if self.paddle.rectangle.x < 0:
                 self.paddle.rectangle.x = 0
