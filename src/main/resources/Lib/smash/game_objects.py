@@ -1,5 +1,7 @@
 """This module contains game objects for smash."""
 
+from com.badlogic.gdx.math import Vector2, Circle, Rectangle
+
 class Block(object):
     """A block to smash with the ball."""
     def __init__(self, texture, hit_sound, rectangle, power_up=None):
@@ -68,3 +70,116 @@ class Paddle(object):
         # TODO(paul-g): we need to compute this so that we can adjust
         #the ball direction/speed based on the paddle's
         pass
+
+
+class Ball(object):
+    def __init__(self, texture, speed):
+        super(Ball, self).__init__()
+        self.direction = Vector2(-1, 1).nor()
+        self.speed = speed
+        self.position = Vector2(100, 100)
+        self.default_texture = texture
+        self.texture = texture
+        self.power_ups = set()
+        self.default_radius = 8
+        self.ball = Circle()
+        self.ball.setPosition(self.position)
+        self.ball.radius = self.default_radius
+        self.rectangle = Rectangle()
+        self.setRectanglePosition()
+
+        self.block_direction_change = -1
+
+    def setRectanglePosition(self):
+        self.rectangle.setPosition(self.position.sub(
+            Vector2(self.ball.radius, self.ball.radius)))
+        self.rectangle.width = 2 * self.ball.radius
+        self.rectangle.height = 2 * self.ball.radius
+
+    def draw(self, batch):
+        batch.draw(self.texture, self.ball.x - self.ball.radius,
+                   self.ball.y - self.ball.radius)
+
+    def set_radius(self, radius):
+        self.ball.radius = radius
+        self.setRectanglePosition()
+
+    def reset_radius(self):
+        self.ball.radius = self.default_radius
+        self.setRectanglePosition()
+
+    def set_texture(self, texture):
+        self.texture = texture
+
+    def reset_texture(self):
+        self.texture = self.default_texture
+
+    def reset_block_direction_change(self):
+        self.block_direction_change = -1
+
+    def tick(self, delta):
+        """Apply tick to all powerups."""
+        #TODO(paul-g): should this really go here? I think the
+        #game should call tick on all game objects.
+        for power_up in self.power_ups:
+            power_up.tick(delta)
+        expired_power_ups = [p for p in self.power_ups if  p.has_expired()]
+        map(self.remove_power_up, expired_power_ups)
+
+    def update_coordinates(self, delta, screen_width, screen_height, 
+                           check_hits_block, check_hits_paddle):
+        # Do we bounce?
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        new_position = Vector2(self.position).add(movement)
+
+        new_x = new_position.x
+        new_y = new_position.y
+        radius = self.ball.radius
+
+        if new_x < radius or new_x > screen_width - radius:
+            # left or right wall collision
+            self.direction.x *= -1
+        elif new_y > screen_height - radius or new_y < radius:
+            self.direction.y *= -1
+
+        # Actually update position
+        movement = Vector2(self.direction)
+        movement.scl(self.speed * delta, self.speed * delta)
+        self.position.add(movement)
+
+        self.ball.setPosition(self.position)
+        self.rectangle.setPosition(self.position)
+
+        # Check hits
+        block = check_hits_block(self)
+        if block:
+            # Hit a block
+            block_bottom = block.rectangle.getY()
+            block_top = block_bottom + block.rectangle.height
+            ball_top = self.position.y + self.ball.radius
+            ball_bottom = self.position.y - self.ball.radius
+            if block_bottom >= ball_top or block_top <= ball_bottom:
+                self.direction.y *= self.block_direction_change
+            else:
+                self.direction.x *= self.block_direction_change
+
+        if check_hits_paddle(self):
+            self.direction.y *= -1
+
+    def add_power_up(self, power_up):
+        """Add a powerup.PowerUp to this ball."""
+        self.power_ups.add(power_up)
+        power_up.apply_effect(self)
+
+    def remove_power_up(self, power_up):
+        """Remove a powerup.PowerUp from this ball."""
+        power_up.remove_effect(self)
+        self.power_ups.remove(power_up)
+
+    def get_power_ups_string(self):
+        """Return a pretty printed list of powerups active for this ball."""
+        if len(self.power_ups) > 0:
+            return " ".join([str(power_up) for power_up in self.power_ups])
+        else:
+            return "Lame"
