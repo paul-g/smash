@@ -10,18 +10,23 @@ class PowerUp(object):
         self.texture = texture
 
     def apply_effect(self, ball):
+        """Apply the effect of this powerup to the ball."""
         raise NotImplementedError()
 
     def remove_effect(self, ball):
+        """Remove the effect of this powerup from the ball."""
         raise NotImplementedError()
 
     def tick(self, delta):
+        """A tick has passed, update remaining time of this powerup."""
         self.time_remaining -= delta
 
     def reset_remaining(self):
+        """Reset remaining time on this powerup to its original lifetime."""
         self.time_remaining = self.lifetime
 
     def has_expired(self):
+        """Return true iff this powerup has expired"""
         return self.time_remaining <= 0
 
 
@@ -43,6 +48,7 @@ class FireBall(PowerUp):
 
 
 class LargeBall(PowerUp):
+    """This powerup just makes the ball larger."""
     def __init__(self, lifetime, texture):
         super(LargeBall, self).__init__(lifetime, texture)
 
