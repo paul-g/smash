@@ -91,8 +91,11 @@ class SmashInput(InputProcessor):
         self.isTouching = False
         return True
 
-    def tick(self, delta):
-        snapshot = InputSnapshot(self.keys, self.touched)
+    def tick(self, delta, camera):
+        touched = self.touched and Vector3(self.touched)
+        if touched:
+            camera.unproject(touched)
+        snapshot = InputSnapshot(self.keys, touched)
         if not self.isTouching:
             self.touched = None
         return snapshot
@@ -341,8 +344,9 @@ class Ball(object):
         else:
             return "Lame"
 
-class PyGdx(ApplicationListener):
+class SmashGame(ApplicationListener):
     def __init__(self):
+        super(SmashGame, self).__init__()
         self.camera = None
         self.batch = None
         self.textures = None
@@ -422,7 +426,6 @@ class PyGdx(ApplicationListener):
             self.playTime += delta
 
             if input.touched:
-                self.camera.unproject(input.touched)
                 self.paddle.rectangle.x = input.touched.x - (64 / 2)
             if input.isLeftPressed():
                 self.paddle.move(delta, -1)
@@ -453,7 +456,7 @@ class PyGdx(ApplicationListener):
 
         self.deltaAcc += Gdx.graphics.getDeltaTime()
         while self.deltaAcc > TICK_TIME:
-            input = self.input.tick(TICK_TIME)
+            input = self.input.tick(TICK_TIME, self.camera)
             self.tick(TICK_TIME, input)
             self.deltaAcc -= TICK_TIME
 
@@ -499,7 +502,7 @@ class PyGdx(ApplicationListener):
 
 def main():
     """Main function"""
-    LwjglApplication(PyGdx(), CONFIG)
+    LwjglApplication(SmashGame(), CONFIG)
 
 if __name__ == '__main__':
     main()
