@@ -109,29 +109,28 @@ class Blocks(object):
         super(Blocks, self).__init__()
         self.blocks = Array()
         # Center horizontally
-        offsetX = (WIDTH - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
+        offset_x = (WIDTH - ((BLOCK_DIM + 1) * BLOCK_COLS)) / 2
         # Flush top vertically
-        offsetY = HEIGHT - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
+        offset_y = HEIGHT - ((BLOCK_DIM + 1) * (BLOCK_ROWS + 1)) - 10
         for j in xrange(len(blockLayout)):
             for i in xrange(len(blockLayout[j])):
                 cell = blockLayout[j][i]
                 if cell != ' ':
-                    x = offsetX + i * (BLOCK_DIM + 1)
-                    y = offsetY + j * (BLOCK_DIM + 1)
-                    power_up = self.getPowerUp(power_ups[cell])
-                    self.blocks.add(
-                        Block(x, y, textures[cell], hit_sound,
-                              Rectangle(x, y, BLOCK_DIM, BLOCK_DIM),
-                              power_up))
+                    x = offset_x + i * (BLOCK_DIM + 1)
+                    y = offset_y + j * (BLOCK_DIM + 1)
+                    power_up = self.get_power_up(power_ups[cell])
+                    self.blocks.add(Block(textures[cell], hit_sound,
+                                          Rectangle(x, y, BLOCK_DIM, BLOCK_DIM),
+                                          power_up))
 
-    def getPowerUp(self, power_up):
+    def get_power_up(self, power_up):
         return power_up[0] if random.random() < power_up[1] else None
 
     def draw(self, batch):
         for block in self.blocks:
             block.draw(batch)
 
-    def checkHit(self, ball):
+    def check_hit(self, ball):
         iterator = self.blocks.iterator()
         while iterator.hasNext():
             block = iterator.next()
@@ -145,10 +144,10 @@ class Paddle(object):
     def __init__(self, texture):
         super(Paddle, self).__init__()
         self.texture = texture
-        paddleWidth = 100
-        paddleHeight = 50
-        self.rectangle = Rectangle((WIDTH - paddleWidth) / 2, 0,
-                                   paddleWidth, paddleHeight)
+        paddle_width = 100
+        paddle_height = 50
+        self.rectangle = Rectangle((WIDTH - paddle_width) / 2, 0,
+                                   paddle_width, paddle_height)
 
     def draw(self, batch):
         batch.draw(self.texture, self.rectangle.x,
@@ -406,10 +405,10 @@ class SmashGame(ApplicationListener):
             HEIGHT / 3 * 2)
 
     def check_hits_block(self, ball):
-        block = self.blocks.checkHit(ball)
+        block = self.blocks.check_hit(ball)
         if block:
             self.broken_blocks += 1
-            power_up = block.getPowerUp()
+            power_up = block.get_power_up()
             if power_up:
                 ball.add_power_up(power_up)
                 power_up.reset_remaining()
