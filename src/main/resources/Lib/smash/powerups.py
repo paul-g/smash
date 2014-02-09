@@ -36,7 +36,7 @@ class FireBall(PowerUp):
         super(FireBall, self).__init__(lifetime, texture)
 
     def apply_effect(self, ball):
-        ball.blockDirectionChange = 1
+        ball.block_direction_change = 1
         ball.set_texture(self.texture)
 
     def remove_effect(self, ball):
