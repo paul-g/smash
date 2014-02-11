@@ -7,8 +7,11 @@ from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input, InputProcessor
 from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
-from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
+from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10, OrthographicCamera
+from com.badlogic.gdx.physics.box2d import Body, World, BodyDef, Box2DDebugRenderer, CircleShape, PolygonShape
+from com.badlogic.gdx.physics.box2d.BodyDef import BodyType
 from datetime import datetime
+
 
 from powerups import *
 from game_objects import *
@@ -35,6 +38,7 @@ CONFIG = LwjglApplicationConfiguration(
 TPS = 30
 TICK_TIME = 1.0 / TPS
 BALL_SPEED = 200 # px/sn
+
 
 class InputSnapshot(object):
     def __init__(self, keys, touched):
@@ -161,14 +165,64 @@ class SmashGame(ApplicationListener):
         self.delta_acc = 0
         self.play_time = 0
 
+
+    def create_world(self):
+        groundPoly = PolygonShape()
+        groundPoly.setAsBox(50, 1)
+
+        groundBodyDef = BodyDef()
+        groundBodyDef.type = BodyType.StaticBody
+        groundBody = self.world.createBody(groundBodyDef)
+
+        groundBody.createFixture(groundPoly, 10)
+        groundPoly.dispose()
+
+        boxPoly = PolygonShape()
+        boxPoly.setAsBox(1, 1)
+
+        for i in range(20):
+             boxBodyDef = BodyDef()
+             boxBodyDef.type = BodyType.DynamicBody
+             boxBodyDef.position.x = -24 + (float)(random.random() * 48)
+             boxBodyDef.position.y = 10 + (float)(random.random() * 100)
+             boxBody = self.world.createBody(boxBodyDef)
+             boxBody.createFixture(boxPoly, 10)
+
+        boxPoly.dispose();
+
+        circleShape = CircleShape()
+        circleShape.setRadius(1)
+
+        for i in range(20):
+            circleBodyDef = BodyDef()
+            circleBodyDef.type = BodyType.DynamicBody
+            circleBodyDef.position.x = -24 + (float)(random.random() * 48)
+            circleBodyDef.position.y = 10 + (float)(random.random() * 100)
+            circleBody = self.world.createBody(circleBodyDef)
+            circleBody.createFixture(circleShape, 10)
+
+        circleShape.dispose();
+
     def create(self):
+
+        # Create the world
+        self.world = World(Vector2(0.0, -10.0), True)
+        body_def = BodyDef()
+        ground_body = self.world.createBody(body_def)
+        self.renderer = Box2DDebugRenderer()
+
+        # add a camera
+        self.camera = OrthographicCamera(48, 32)
+        self.camera.position.set(0, 15, 0)
         self.input = SmashInput()
         Gdx.input.setInputProcessor(self.input)
 
-        self.camera = OrthographicCamera()
-        self.camera.setToOrtho(False, WIDTH, HEIGHT)
+#        self.camera = OrthographicCamera()
+#        self.camera.setToOrtho(False, WIDTH, HEIGHT)
         self.batch = SpriteBatch()
         self.state = PLAYING
+
+        self.create_world()
 
         self.background = Texture("assets/swahili.png")
         self.ball = Ball(Texture("assets/red_ball_16_16.png"),
@@ -260,16 +314,21 @@ class SmashGame(ApplicationListener):
                 check_hits_paddle=self.paddle.hits)
 
     def render(self):
+
+        self.world.step(Gdx.app.getGraphics().getDeltaTime(), 3, 3)
+
         Gdx.gl.glClearColor(0, 0, 0, 0)
         Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
 
-        self.delta_acc += Gdx.graphics.getDeltaTime()
-        while self.delta_acc > TICK_TIME:
-            input = self.input.tick(TICK_TIME, self.camera)
-            self.tick(TICK_TIME, input)
-            self.delta_acc -= TICK_TIME
+        self.renderer.render(self.world, self.camera.combined)
 
-        self.draw()
+        # self.delta_acc += Gdx.graphics.getDeltaTime()
+        # while self.delta_acc > TICK_TIME:
+        #     input = self.input.tick(TICK_TIME, self.camera)
+        #     self.tick(TICK_TIME, input)
+        #     self.delta_acc -= TICK_TIME
+
+        # self.draw()
 
     def big_centered_text(self, batch, text):
         self.hud_font.draw(
