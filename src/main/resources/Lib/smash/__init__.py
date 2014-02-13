@@ -1,5 +1,6 @@
 """Smash is a simple port of the legendary Breakout to libgdx."""
 import random
+import math
 
 from com.badlogic.gdx.backends.lwjgl import LwjglApplication
 from com.badlogic.gdx.backends.lwjgl import LwjglApplicationConfiguration
@@ -166,30 +167,47 @@ class SmashGame(ApplicationListener):
         self.delta_acc = 0
         self.play_time = 0
 
+    def create_ground(self, position):
+        """Create the ground shape.
+        position = -1 / 1 for top / bottom respectively."""
+        ground_poly = PolygonShape()
+        ground_poly.setAsBox(50, 1)
+        ground_body_def = BodyDef()
+        ground_body_def.type = BodyType.StaticBody
+        ground_body_def.position.set(1.0, position * 15.0)
+        ground_body = self.world.createBody(ground_body_def)
+        ground_body.createFixture(ground_poly, 10)
+        ground_poly.dispose()
+
+    def create_wall(self, position):
+        """Create a wall in the given position.
+        position = -1 / 1 for west / east wall respectively."""
+        wall_poly = PolygonShape()
+        wall_poly.setAsBox(50, 1)
+        wall_def = BodyDef()
+        wall_def.type = BodyType.StaticBody
+        wall_def.angle = math.radians(90)
+        wall_def.position.set(position * 24, 0)
+        wall_body = self.world.createBody(wall_def)
+        wall_body.createFixture(wall_poly, 10)
+        wall_poly.dispose()
 
     def create_world(self):
-        groundPoly = PolygonShape()
-        groundPoly.setAsBox(50, 1)
-
-        groundBodyDef = BodyDef()
-        groundBodyDef.type = BodyType.StaticBody
-        groundBody = self.world.createBody(groundBodyDef)
-
-        groundBody.createFixture(groundPoly, 10)
-        groundPoly.dispose()
+        self.create_ground(-1)
+        self.create_ground(1)
+        self.create_wall(-1)
+        self.create_wall(1)
 
         boxPoly = PolygonShape()
         boxPoly.setAsBox(1, 1)
 
-        for i in range(20):
-             boxBodyDef = BodyDef()
-             boxBodyDef.type = BodyType.DynamicBody
-             boxBodyDef.position.x = -24 + (float)(random.random() * 48)
-             boxBodyDef.position.y = 10 + (float)(random.random() * 100)
-             boxBody = self.world.createBody(boxBodyDef)
-             boxBody.createFixture(boxPoly, 10)
-
-        boxPoly.dispose();
+        boxBodyDef = BodyDef()
+        boxBodyDef.type = BodyType.DynamicBody
+        boxBodyDef.position.x = 9
+        boxBodyDef.position.y = -14
+        boxBody = self.world.createBody(boxBodyDef)
+        boxBody.createFixture(boxPoly, 10)
+        boxPoly.dispose()
 
         circleShape = CircleShape()
         circleShape.setRadius(1)
@@ -199,23 +217,22 @@ class SmashGame(ApplicationListener):
         fd.density = 1.0
         fd.restitution = 1.0
 
-        for i in range(20):
-            circleBodyDef = BodyDef()
-            circleBodyDef.type = BodyType.DynamicBody
-            circleBodyDef.position.x = -24 + (float)(random.random() * 48)
-            circleBodyDef.position.y = 10 + (float)(random.random() * 100)
-            circleBody = self.world.createBody(circleBodyDef)
-            circleBody.createFixture(fd)
-
+        circleBodyDef = BodyDef()
+        circleBodyDef.type = BodyType.DynamicBody
+        circleBodyDef.position.x = 10
+        circleBodyDef.position.y = 10
+        SPEED = 10
+        circleBodyDef.linearVelocity.set(2 * SPEED, -2 * SPEED)
+        circleBody = self.world.createBody(circleBodyDef)
+        circleBody.createFixture(fd)
 
         circleShape.dispose();
 
     def create(self):
 
         # Create the world
-        self.world = World(Vector2(0.0, -10.0), True)
-        body_def = BodyDef()
-        ground_body = self.world.createBody(body_def)
+        gravity = Vector2(0.0, 0.0)
+        self.world = World(gravity, True)
         self.renderer = Box2DDebugRenderer()
 
         # add a camera
