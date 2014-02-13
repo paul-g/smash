@@ -7,11 +7,12 @@ from com.badlogic.gdx.utils import TimeUtils, Array
 from com.badlogic.gdx.math import MathUtils, Rectangle, Circle, Vector3, Vector2
 from com.badlogic.gdx import ApplicationListener, Gdx, Input, InputProcessor
 from com.badlogic.gdx.graphics.g2d import SpriteBatch, BitmapFont
-from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10, OrthographicCamera
-from com.badlogic.gdx.physics.box2d import Body, World, BodyDef, Box2DDebugRenderer, CircleShape, PolygonShape
+from com.badlogic.gdx.graphics import Texture, OrthographicCamera, GL10
+from com.badlogic.gdx.physics.box2d import Body, World, BodyDef
+from com.badlogic.gdx.physics.box2d import CircleShape, PolygonShape, FixtureDef
+from com.badlogic.gdx.physics.box2d import Box2DDebugRenderer
 from com.badlogic.gdx.physics.box2d.BodyDef import BodyType
 from datetime import datetime
-
 
 from powerups import *
 from game_objects import *
@@ -193,13 +194,19 @@ class SmashGame(ApplicationListener):
         circleShape = CircleShape()
         circleShape.setRadius(1)
 
+        fd = FixtureDef()
+        fd.shape = circleShape
+        fd.density = 1.0
+        fd.restitution = 1.0
+
         for i in range(20):
             circleBodyDef = BodyDef()
             circleBodyDef.type = BodyType.DynamicBody
             circleBodyDef.position.x = -24 + (float)(random.random() * 48)
             circleBodyDef.position.y = 10 + (float)(random.random() * 100)
             circleBody = self.world.createBody(circleBodyDef)
-            circleBody.createFixture(circleShape, 10)
+            circleBody.createFixture(fd)
+
 
         circleShape.dispose();
 
