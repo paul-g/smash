@@ -61,13 +61,14 @@ class PaddlePro(object):
 
 class Paddle(object):
     """A paddle to hit the ball with."""
-    def __init__(self, texture, rectangle):
+    def __init__(self, texture, rectangle, game):
         """rectangle should implement:
            - overlaps(rect): return true iff this rectangle overalps with rect
         """
         super(Paddle, self).__init__()
         self.texture = texture
         self.rectangle = rectangle
+        self.game = game
 
     def draw(self, batch):
         """Draw this paddle.
@@ -85,12 +86,27 @@ class Paddle(object):
     def move(self, delta, direction=1):
         """direction is 1 for right, -1 for left."""
         self.rectangle.x += direction * 200 * delta
+        self.__check()
 
     def get_speed(self):
         """Returns the paddle's speed, as seen by the user."""
         # TODO(paul-g): we need to compute this so that we can adjust
         #the ball direction/speed based on the paddle's
         pass
+
+    def set_x(self, x):
+        self.rectangle.x = x
+        self.__check()
+
+    def __check(self):
+        if self.rectangle.x < 0:
+            self.rectangle.x = 0
+        width = self.game.screen_width()
+        if self.rectangle.x > (width - self.rectangle.width):
+            self.rectangle.x = width - self.rectangle.width
+
+    def top(self):
+        return self.rectangle.y + self.rectangle.height
 
 
 class Ball(object):
