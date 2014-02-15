@@ -42,22 +42,41 @@ class Block(object):
         return self.power_up
 
 class PaddlePro(object):
+    """A physics enabled Paddle."""
     def __init__(self, world):
-        """Create a physics enabled Paddle."""
         boxPoly = PolygonShape()
-        boxPoly.setAsBox(1, 1)
+        boxPoly.setAsBox(5, 0.5)
 
         boxBodyDef = BodyDef()
-        boxBodyDef.type = BodyType.StaticBody
+        boxBodyDef.type = BodyType.KinematicBody
         boxBodyDef.position.x = 9
-        boxBodyDef.position.y = -14
-        boxBody = world.createBody(boxBodyDef)
-        boxBody.createFixture(boxPoly, 10)
+        boxBodyDef.position.y = -12
+
+        self.boxBody = world.createBody(boxBodyDef)
+        fixture = self.boxBody.createFixture(boxPoly, 10)
+        fixture.setDensity(0.5)
+        self.boxBody.resetMassData()
         boxPoly.dispose()
 
+    def slow_down(self, delta):
+        vel = self.boxBody.getLinearVelocity()
+        vel.x = vel.x / 1.1
+        self.boxBody.setLinearVelocity(vel)
+
+    def move(self, delta, direction):
+        speed = 20
+        vel = self.boxBody.getLinearVelocity()
+        vel.x = direction * speed
+        self.boxBody.setLinearVelocity(vel)
 
     def set_x(self, x):
         print "Setting x position " + str(x)
+
+    def top(self):
+        return 100
+
+    def hits(self, other):
+        return False
 
 class Paddle(object):
     """A paddle to hit the ball with."""
@@ -173,7 +192,7 @@ class Ball(object):
         expired_power_ups = [p for p in self.power_ups if  p.has_expired()]
         map(self.remove_power_up, expired_power_ups)
 
-    def update_coordinates(self, delta, screen_width, screen_height, 
+    def update_coordinates(self, delta, screen_width, screen_height,
                            check_hits_block, check_hits_paddle):
         # Do we bounce?
         movement = Vector2(self.direction)

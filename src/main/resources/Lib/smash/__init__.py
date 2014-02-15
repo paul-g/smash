@@ -172,7 +172,7 @@ class SmashGame(ApplicationListener):
 
     def screen_height(self):
         return HEIGHT
-        
+
     def create_ground(self, position):
         """Create the ground shape.
         position = -1 / 1 for top / bottom respectively."""
@@ -204,16 +204,7 @@ class SmashGame(ApplicationListener):
         self.create_wall(-1)
         self.create_wall(1)
 
-        boxPoly = PolygonShape()
-        boxPoly.setAsBox(1, 1)
-
-        boxBodyDef = BodyDef()
-        boxBodyDef.type = BodyType.DynamicBody
-        boxBodyDef.position.x = 9
-        boxBodyDef.position.y = -14
-        boxBody = self.world.createBody(boxBodyDef)
-        boxBody.createFixture(boxPoly, 10)
-        boxPoly.dispose()
+        self.paddle = PaddlePro(self.world)
 
         circleShape = CircleShape()
         circleShape.setRadius(1)
@@ -273,9 +264,9 @@ class SmashGame(ApplicationListener):
 
         paddle_width = 100
         paddle_height = 50
-        self.paddle = Paddle(Texture("assets/paddle.png"),
-                             Rectangle((WIDTH - paddle_width) / 2, 0,
-                                       paddle_width, paddle_height), self)
+        # self.paddle = Paddle(Texture("assets/paddle.png"),
+        #                      Rectangle((WIDTH - paddle_width) / 2, 0,
+        #                                paddle_width, paddle_height), self)
         self.drop_sound = Gdx.audio.newSound(
             Gdx.files.internal("assets/drop.wav"))
         self.rain_music = Gdx.audio.newSound(
@@ -315,16 +306,24 @@ class SmashGame(ApplicationListener):
 
     def tick(self, delta, input):
         """ Another 1/60 seconds have passed.  Update state. """
-        if self.state == PLAYING:
+        print "tick"
+#        if self.state == PLAYING:
+        if True:
+
             self.play_time += delta
 
             if input.touched:
                 # not tested
                 self.paddle.set_x(input.touched.x - (64 / 2))
-            if input.is_left_pressed():
+            elif input.is_left_pressed():
+                print "Pressed left"
                 self.paddle.move(delta, -1)
-            if input.is_right_pressed():
-                self.paddle.move(delta)
+            elif input.is_right_pressed():
+                print "Presed right"
+                self.paddle.move(delta, 1)
+            else:
+                # no input, slow down
+                self.paddle.slow_down(delta)
 
             if (self.ball.rectangle.y < self.paddle.top()
                 and not self.paddle.hits(self.ball)):
@@ -348,11 +347,11 @@ class SmashGame(ApplicationListener):
 
         self.renderer.render(self.world, self.camera.combined)
 
-        # self.delta_acc += Gdx.graphics.getDeltaTime()
-        # while self.delta_acc > TICK_TIME:
-        #     input = self.input.tick(TICK_TIME, self.camera)
-        #     self.tick(TICK_TIME, input)
-        #     self.delta_acc -= TICK_TIME
+        self.delta_acc += Gdx.graphics.getDeltaTime()
+        while self.delta_acc > TICK_TIME:
+            input = self.input.tick(TICK_TIME, self.camera)
+            self.tick(TICK_TIME, input)
+            self.delta_acc -= TICK_TIME
 
         # self.draw()
 
@@ -400,5 +399,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
