@@ -1,6 +1,10 @@
 """This module contains game objects for smash."""
 
 from com.badlogic.gdx.math import Vector2
+from com.badlogic.gdx.physics.box2d import Body, World, BodyDef
+from com.badlogic.gdx.physics.box2d import CircleShape, PolygonShape, FixtureDef
+from com.badlogic.gdx.physics.box2d import Box2DDebugRenderer
+from com.badlogic.gdx.physics.box2d.BodyDef import BodyType
 
 class Block(object):
     """A block to smash with the ball."""
@@ -37,6 +41,23 @@ class Block(object):
         """Return this block's powerup."""
         return self.power_up
 
+class PaddlePro(object):
+    def __init__(self, world):
+        """Create a physics enabled Paddle."""
+        boxPoly = PolygonShape()
+        boxPoly.setAsBox(1, 1)
+
+        boxBodyDef = BodyDef()
+        boxBodyDef.type = BodyType.StaticBody
+        boxBodyDef.position.x = 9
+        boxBodyDef.position.y = -14
+        boxBody = world.createBody(boxBodyDef)
+        boxBody.createFixture(boxPoly, 10)
+        boxPoly.dispose()
+
+
+    def set_x(self, x):
+        print "Setting x position " + str(x)
 
 class Paddle(object):
     """A paddle to hit the ball with."""
