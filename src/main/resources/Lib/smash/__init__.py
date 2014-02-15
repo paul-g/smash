@@ -161,6 +161,12 @@ class SmashGame(ApplicationListener):
         self.delta_acc = 0
         self.play_time = 0
 
+    def screen_width(self):
+        return WIDTH
+
+    def screen_height(self):
+        return HEIGHT
+
     def create(self):
         self.input = SmashInput()
         Gdx.input.setInputProcessor(self.input)
@@ -190,7 +196,7 @@ class SmashGame(ApplicationListener):
         paddle_height = 50
         self.paddle = Paddle(Texture("assets/paddle.png"),
                              Rectangle((WIDTH - paddle_width) / 2, 0,
-                                       paddle_width, paddle_height))
+                                       paddle_width, paddle_height), self)
         self.drop_sound = Gdx.audio.newSound(
             Gdx.files.internal("assets/drop.wav"))
         self.rain_music = Gdx.audio.newSound(
@@ -234,19 +240,14 @@ class SmashGame(ApplicationListener):
             self.play_time += delta
 
             if input.touched:
-                self.paddle.rectangle.x = input.touched.x - (64 / 2)
+                # not tested
+                self.paddle.set_x(input.touched.x - (64 / 2))
             if input.is_left_pressed():
                 self.paddle.move(delta, -1)
             if input.is_right_pressed():
                 self.paddle.move(delta)
 
-            paddle_rect = self.paddle.rectangle
-            if paddle_rect.x < 0:
-                self.paddle.rectangle.x = 0
-            if paddle_rect.x > (WIDTH - paddle_rect.width):
-                self.paddle.rectangle.x = WIDTH - paddle_rect.width
-
-            if (self.ball.rectangle.y < paddle_rect.y + paddle_rect.height
+            if (self.ball.rectangle.y < self.paddle.top()
                 and not self.paddle.hits(self.ball)):
                 self.state = LOST
 
