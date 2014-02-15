@@ -223,7 +223,7 @@ class SmashGame(ApplicationListener):
         circleBody = self.world.createBody(circleBodyDef)
         circleBody.createFixture(fd)
 
-        circleShape.dispose();
+        circleShape.dispose()
 
 
     def create(self):
@@ -306,9 +306,9 @@ class SmashGame(ApplicationListener):
 
     def tick(self, delta, input):
         """ Another 1/60 seconds have passed.  Update state. """
-        print "tick"
-#        if self.state == PLAYING:
+
         if True:
+#        if self.state == PLAYING:
 
             self.play_time += delta
 
@@ -316,10 +316,8 @@ class SmashGame(ApplicationListener):
                 # not tested
                 self.paddle.set_x(input.touched.x - (64 / 2))
             elif input.is_left_pressed():
-                print "Pressed left"
                 self.paddle.move(delta, -1)
             elif input.is_right_pressed():
-                print "Presed right"
                 self.paddle.move(delta, 1)
             else:
                 # no input, slow down
@@ -371,9 +369,6 @@ class SmashGame(ApplicationListener):
                 power_up.reset_remaining()
         return block
 
-    def updatePowerUps(self):
-        self.ball.updatePowerUps()
-
     def resize(self, width, height):
         pass
 
@@ -388,7 +383,7 @@ class SmashGame(ApplicationListener):
         self.batch.dispose()
         for (_, texture) in self.textures.items():
             texture.dispose()
-        self.paddle.texture.dispose()
+        self.paddle.dispose()
         self.drop_sound.dispose()
         self.rain_music.dispose()
         self.hud_font.dispose()

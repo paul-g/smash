@@ -1,9 +1,7 @@
 """This module contains game objects for smash."""
 
 from com.badlogic.gdx.math import Vector2
-from com.badlogic.gdx.physics.box2d import Body, World, BodyDef
-from com.badlogic.gdx.physics.box2d import CircleShape, PolygonShape, FixtureDef
-from com.badlogic.gdx.physics.box2d import Box2DDebugRenderer
+from com.badlogic.gdx.physics.box2d import BodyDef, PolygonShape
 from com.badlogic.gdx.physics.box2d.BodyDef import BodyType
 
 class Block(object):
@@ -44,30 +42,32 @@ class Block(object):
 class PaddlePro(object):
     """A physics enabled Paddle."""
     def __init__(self, world):
-        boxPoly = PolygonShape()
-        boxPoly.setAsBox(5, 0.5)
+        box_poly = PolygonShape()
+        box_poly.setAsBox(5, 0.5)
 
-        boxBodyDef = BodyDef()
-        boxBodyDef.type = BodyType.KinematicBody
-        boxBodyDef.position.x = 9
-        boxBodyDef.position.y = -12
+        box_body_def = BodyDef()
+        box_body_def.type = BodyType.KinematicBody
+        box_body_def.position.x = 9
+        box_body_def.position.y = -12
 
-        self.boxBody = world.createBody(boxBodyDef)
-        fixture = self.boxBody.createFixture(boxPoly, 10)
+        self.box_body = world.createBody(box_body_def)
+        fixture = self.box_body.createFixture(box_poly, 10)
         fixture.setDensity(0.5)
-        self.boxBody.resetMassData()
-        boxPoly.dispose()
+        self.box_body.resetMassData()
+        box_poly.dispose()
 
     def slow_down(self, delta):
-        vel = self.boxBody.getLinearVelocity()
+        """Reduce the speed of the paddle."""
+        vel = self.box_body.getLinearVelocity()
         vel.x = vel.x / 1.1
-        self.boxBody.setLinearVelocity(vel)
+        self.box_body.setLinearVelocity(vel)
 
     def move(self, delta, direction):
+        """Move paddle in a given direction (-1 for west and 1 for east)"""
         speed = 20
-        vel = self.boxBody.getLinearVelocity()
+        vel = self.box_body.getLinearVelocity()
         vel.x = direction * speed
-        self.boxBody.setLinearVelocity(vel)
+        self.box_body.setLinearVelocity(vel)
 
     def set_x(self, x):
         print "Setting x position " + str(x)
@@ -77,6 +77,9 @@ class PaddlePro(object):
 
     def hits(self, other):
         return False
+
+    def dispose(self):
+        pass
 
 class Paddle(object):
     """A paddle to hit the ball with."""
@@ -88,6 +91,9 @@ class Paddle(object):
         self.texture = texture
         self.rectangle = rectangle
         self.game = game
+
+    def dispose(self):
+        self.texture.dispose()
 
     def draw(self, batch):
         """Draw this paddle.
@@ -106,12 +112,6 @@ class Paddle(object):
         """direction is 1 for right, -1 for left."""
         self.rectangle.x += direction * 200 * delta
         self.__check()
-
-    def get_speed(self):
-        """Returns the paddle's speed, as seen by the user."""
-        # TODO(paul-g): we need to compute this so that we can adjust
-        #the ball direction/speed based on the paddle's
-        pass
 
     def set_x(self, x):
         self.rectangle.x = x
@@ -153,10 +153,10 @@ class Ball(object):
         self.ball.setPosition(self.position)
         self.ball.radius = self.default_radius
         self.rectangle = rectangle
-        self.setRectanglePosition()
+        self.set_rectangle_position()
         self.block_direction_change = -1
 
-    def setRectanglePosition(self):
+    def set_rectangle_position(self):
         self.rectangle.setPosition(self.position.sub(
             Vector2(self.ball.radius, self.ball.radius)))
         self.rectangle.width = 2 * self.ball.radius
@@ -168,11 +168,11 @@ class Ball(object):
 
     def set_radius(self, radius):
         self.ball.radius = radius
-        self.setRectanglePosition()
+        self.set_rectangle_position()
 
     def reset_radius(self):
         self.ball.radius = self.default_radius
-        self.setRectanglePosition()
+        self.set_rectangle_position()
 
     def set_texture(self, texture):
         self.texture = texture
